@@ -1,3 +1,66 @@
 {
-  "_comment": "This file is generated. Please edit .homeycompose/app.json instead."
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "com.glowmarkt.api",
+  "version": "1.0.0",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Glowmarkt UK Smart Meter"
+  },
+  "description": {
+    "en": "Connects to UK smart meters via the Glowmarkt API"
+  },
+  "category": [
+    "tools"
+  ],
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Jonathan Draper",
+    "email": "account+homey@myinbox.me.uk"
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "Smart Meter"
+      },
+      "class": "other",
+      "capabilities": [
+        "measure_power"
+      ],
+      "energy": {
+        "cumulative": true
+      },
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [],
+      "images": {
+        "small": "/drivers/smart-meter/assets/images/small.png",
+        "large": "/drivers/smart-meter/assets/images/large.png",
+        "xlarge": "/drivers/smart-meter/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_my_devices"
+          }
+        },
+        {
+          "id": "add_my_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "smart-meter"
+    }
+  ]
 }
