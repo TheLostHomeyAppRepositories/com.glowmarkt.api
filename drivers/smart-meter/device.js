@@ -17,12 +17,35 @@ class MyDevice extends Device {
   async onInit() {
     this.log('MyDevice has been initialized');
 
-    let token = this.getStoreValue('token');
-    this.log('Token from store: ' + token);
+    // get token, username and password from store
+    let storeToken = this.getStoreValue('token');
+    let token = '';
+    const auth = {
+      "username": this.getStoreValue('user'),
+      "password": this.getStoreValue('pass')
+    };
 
-    const reqUrl = `https://api.glowmarkt.com/api/v0-1/resource/${ELEC_CONSUMPTION}/current`;
+    // if token is 'new' then grab new token from API
+    if(storeToken === 'new') {
+      this.log('Device newly added - getting token from API');
+      const apiReqUrl = 'https://api.glowmarkt.com/api/v0-1/auth';
+
+      fetch(apiReqUrl, {
+        method: 'POST', 
+        headers: {
+          'Content-Type': 'application/json',
+          'applicationId': APP_ID
+        },
+        body: JSON.stringify(auth)
+        })
+        .then(res => res.json())
+        .then(json => {
+          token = json.token;
+        });
+    };
 
     // poll every 10 seconds and set measure_power capability to the power value retrieved from API
+    const reqUrl = `https://api.glowmarkt.com/api/v0-1/resource/${ELEC_CONSUMPTION}/current`;
     setInterval(() => {
     fetch(reqUrl, {
       method: 'GET', 

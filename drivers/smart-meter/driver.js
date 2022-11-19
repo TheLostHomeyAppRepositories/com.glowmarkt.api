@@ -24,7 +24,11 @@ class MyDriver extends Driver {
           id: 'my-smart-meter',
         },
         store: {
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbkhhc2giOiJiZmVjMzc3ZTVlYzMwYmNmMmJjNGMzZGMyOGU3ZjIyZmUzNzdiNTIxOWMzMzc4YWY4YmQ5MzFhMmQ2OWE3ODdlODQyNmQ4MTFjYjc1NzcyZGQ5OGM0ZTU4ZDgzODNiODkiLCJ2ZXJzaW9uIjoiMS4xIiwiaWF0IjoxNjY3NTIwMDAwLCJleHAiOjE3MTUwNDAwMDB9.KjcQdzyGRdVhJzpWMGKVNHeBhhFwoYTh75zzZ75oarU',
+          // set blank token to start with - will be grabbed from API when device initialised
+          token: 'new',
+          // set username and password - these will eventually come from device settings but hard coded here for now to keep things simple
+          user: 'recheck_golf_0r@icloud.com',
+          pass: 'cidriM3ruzbodohtug'
         },
       },
     ];
