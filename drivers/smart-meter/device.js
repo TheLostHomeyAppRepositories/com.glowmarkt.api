@@ -1,6 +1,14 @@
 'use strict';
 
 const { Device } = require('homey');
+const fetch = require('node-fetch');
+const { json } = require('stream/consumers');
+
+// Temporary fixed tokens and IDs
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbkhhc2giOiJiZmVjMzc3ZTVlYzMwYmNmMmJjNGMzZGMyOGU3ZjIyZmUzNzdiNTIxOWMzMzc4YWY4YmQ5MzFhMmQ2OWE3ODdlODQyNmQ4MTFjYjc1NzcyZGQ5OGM0ZTU4ZDgzODNiODkiLCJ2ZXJzaW9uIjoiMS4xIiwiaWF0IjoxNjY3NzI3NTE4LCJleHAiOjE3MTUyNDc1MTh9.UL7y4O-WvObcMW6Ix74tfpJWzDmKuNjuK4BD1JWw9Wo';
+const ELEC_CONSUMPTION = 'e18c1df8-989a-4423-a5ec-3d60630ddd65';
+const ELEC_COST = '47305f84-1967-47ca-8af8-e0d181df2144';
+const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 
 class MyDevice extends Device {
 
@@ -9,6 +17,24 @@ class MyDevice extends Device {
    */
   async onInit() {
     this.log('MyDevice has been initialized');
+
+    const reqUrl = `https://api.glowmarkt.com/api/v0-1/resource/${ELEC_CONSUMPTION}/current`;
+
+    // poll every 10 seconds and set measure_power capability to the power value retrieved from API
+    setInterval(() => {
+    fetch(reqUrl, {
+      method: 'GET', 
+      headers: {
+        'Content-Type': 'application/json',
+        'token': AUTH_TOKEN,
+        'applicationId': APP_ID
+      }})
+      .then(res => res.json())
+      .then(json => {
+        let power = json.data[0][1];
+        this.setCapabilityValue('measure_power', power).catch(this.error);
+      });
+    }, 10000);
   }
 
   /**
