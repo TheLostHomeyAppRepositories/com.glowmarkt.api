@@ -2,13 +2,13 @@
 
 const { Driver } = require('homey');
 
-class MyDriver extends Driver {
+class GlowmarktUKSmartMeter_driver extends Driver {
 
   /**
    * onInit is called when the driver is initialized.
    */
   async onInit() {
-    this.log('MyDriver has been initialized');
+    this.log('Glowmarkt UK Smart Meter has been initialized');
   }
 
   /**
@@ -22,14 +22,11 @@ class MyDriver extends Driver {
         name: 'Smart Meter',
         data: {
           id: 'my-smart-meter',
-        },
-        store: {
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbkhhc2giOiJiZmVjMzc3ZTVlYzMwYmNmMmJjNGMzZGMyOGU3ZjIyZmUzNzdiNTIxOWMzMzc4YWY4YmQ5MzFhMmQ2OWE3ODdlODQyNmQ4MTFjYjc1NzcyZGQ5OGM0ZTU4ZDgzODNiODkiLCJ2ZXJzaW9uIjoiMS4xIiwiaWF0IjoxNjY3NTIwMDAwLCJleHAiOjE3MTUwNDAwMDB9.KjcQdzyGRdVhJzpWMGKVNHeBhhFwoYTh75zzZ75oarU',
-        },
+        }
       },
     ];
   }
 
 }
 
-module.exports = MyDriver;
+module.exports = GlowmarktUKSmartMeter_driver;
