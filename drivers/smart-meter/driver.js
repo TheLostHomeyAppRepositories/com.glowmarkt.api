@@ -2,13 +2,13 @@
 
 const { Driver } = require('homey');
 
-class MyDriver extends Driver {
+class GlowmarktUKSmartMeter_driver extends Driver {
 
   /**
    * onInit is called when the driver is initialized.
    */
   async onInit() {
-    this.log('MyDriver has been initialized');
+    this.log('Glowmarkt UK Smart Meter has been initialized');
   }
 
   /**
@@ -22,18 +22,11 @@ class MyDriver extends Driver {
         name: 'Smart Meter',
         data: {
           id: 'my-smart-meter',
-        },
-        store: {
-          // set blank token to start with - will be grabbed from API when device initialised
-          token: 'new',
-          // set username and password - these will eventually come from device settings but hard coded here for now to keep things simple
-          user: 'recheck_golf_0r@icloud.com',
-          pass: 'cidriM3ruzbodohtug'
-        },
+        }
       },
     ];
   }
 
 }
 
-module.exports = MyDriver;
+module.exports = GlowmarktUKSmartMeter_driver;
