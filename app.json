@@ -60,7 +60,31 @@
           "template": "add_devices"
         }
       ],
-      "id": "smart-meter"
+      "id": "smart-meter",
+      "settings": [
+        {
+          "id": "username",
+          "type": "text",
+          "label": {
+            "en": "Username"
+          },
+          "value": "username",
+          "hint": {
+            "en": "The username for your Bright app account."
+          }
+        },
+        {
+          "id": "password",
+          "type": "password",
+          "label": {
+            "en": "Password"
+          },
+          "value": "password",
+          "hint": {
+            "en": "The password for your Bright app account."
+          }
+        }
+      ]
     }
   ]
 }
