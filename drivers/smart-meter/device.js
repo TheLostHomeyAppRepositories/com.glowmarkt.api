@@ -23,7 +23,21 @@ class GlowmarktUKSmartMeter_device extends Device {
    * onAdded is called when the user adds the device, called just after pairing.
    */
   async onAdded() {
-    this.log('MyDevice has been added');
+    this.log('Smart meter has been added');
+    const apiReqUrl = 'https://api.glowmarkt.com/api/v0-1/auth';
+
+    fetch(apiReqUrl, {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json',
+        'applicationId': APP_ID
+      },
+      body: JSON.stringify(auth)
+    })
+    .then(res => res.json())
+    .then(json => {
+      token = json.token;
+    });
   }
 
   /**
