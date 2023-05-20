@@ -3,12 +3,10 @@
 const { Device } = require('homey');
 const fetch = require('node-fetch');
 const { json } = require('stream/consumers');
+// fixed app ID
+const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 let poll;
 let token;
-
-// Temporary fixed tokens and IDs
-const ELEC_CONSUMPTION = 'e18c1df8-989a-4423-a5ec-3d60630ddd65';
-const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 
 class GlowmarktUKSmartMeter_device extends Device {
 
@@ -16,46 +14,51 @@ class GlowmarktUKSmartMeter_device extends Device {
    * onInit is called when the device is initialized.
    */
   async onInit() {
-    this.log('MyDevice has been initialized');
+    this.log('Smart Meter device initialized');
     const settings = this.getSettings();
 
-    // get new auth token from API
-    this.log('Trying to log in with provided credentials');
-    const auth = {
-      "username": settings.username,
-      "password": settings.password
-    };
-    const apiReqUrl = 'https://api.glowmarkt.com/api/v0-1/auth';
+    // set username and password from store
+    let username = settings.username;
+    let password = settings.password;
 
-    fetch(apiReqUrl, {
+    // create an auth object for the API call
+    const auth = {
+      'username': username,
+      'password': password
+    };
+
+    // get auth token from API
+    this.log('Getting auth token from API');
+
+    let tokenResponse = await fetch('https://api.glowmarkt.com/api/v0-1/auth', {
       method: 'POST', 
       headers: {
         'Content-Type': 'application/json',
         'applicationId': APP_ID
       },
       body: JSON.stringify(auth)
-    })
-    .then(res => res.json())
-    .then(json => {
-      token = json.token;
-      this.log('Successfully logged in. Maybe.');
     });
+    let tokenResponseJSON = await tokenResponse.json();
+    token = tokenResponseJSON.token;
 
     // poll every 10 seconds and set measure_power capability to the power value retrieved from API
-    const reqUrl = `https://api.glowmarkt.com/api/v0-1/resource/${ELEC_CONSUMPTION}/current`;
+    this.log('Initiating polling');
     poll = setInterval(() => {
-    fetch(reqUrl, {
-      method: 'GET', 
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-        'applicationId': APP_ID
-      }})
-      .then(res => res.json())
-      .then(json => {
-        let power = json.data[0][1];
-        this.setCapabilityValue('measure_power', power).catch(this.error);
-      });
+      let elec_consumption = this.getStoreValue('elec_consumption_id');
+
+      let pollUrl = `https://api.glowmarkt.com/api/v0-1/resource/${elec_consumption}/current`;
+      fetch(pollUrl, {
+        method: 'GET', 
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token,
+          'applicationId': APP_ID
+        }})
+        .then(res => res.json())
+        .then(json => {
+          let power = json.data[0][1];
+          this.setCapabilityValue('measure_power', power).catch(this.error);
+        });
     }, 10000);
   }
 
@@ -63,7 +66,21 @@ class GlowmarktUKSmartMeter_device extends Device {
    * onAdded is called when the user adds the device, called just after pairing.
    */
   async onAdded() {
-    this.log('Smart meter has been added');
+    this.log('Smart meter device added');
+
+        // get elec consumption id
+        this.log('Getting electricity consumption ID from API');
+
+        let ecidResponse = await fetch('https://api.glowmarkt.com/api/v0-1/virtualentity', {
+          method: 'GET', 
+          headers: {
+            'Content-Type': 'application/json',
+            'token': token,
+            'applicationId': APP_ID
+        }});
+        let ecidResponseJSON = await ecidResponse.json();
+        let elec_consumption = ecidResponseJSON[0].resources[0].resourceId;
+        this.setStoreValue('elec_consumption_id', elec_consumption);
   }
 
   /**
@@ -96,6 +113,7 @@ class GlowmarktUKSmartMeter_device extends Device {
     .then(res => res.json())
     .then(json => {
       token = json.token;
+      this.setStoreValue('token',token);
     });
   }
 
@@ -105,14 +123,17 @@ class GlowmarktUKSmartMeter_device extends Device {
    * @param {string} name The new name
    */
   async onRenamed(name) {
-    this.log('MyDevice was renamed');
+    this.log('Smart meter device was renamed');
   }
 
   /**
    * onDeleted is called when the user deleted the device.
    */
   async onDeleted() {
-    this.log('MyDevice has been deleted');
+    this.log('Smart meter device has been deleted');
+    if (poll != null) {
+      clearInterval(poll);
+    };
   }
 
 }
