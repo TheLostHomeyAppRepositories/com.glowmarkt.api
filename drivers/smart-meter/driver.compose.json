@@ -26,8 +26,7 @@
         "usernamePlaceholder": {"en": "john@doe.com"},
         "passwordLabel": {"en": "Password"},
         "passwordPlaceholder": {"en": "password"}
-      },
-      "navigation": { "next": "list_devices" }
+      }
     },
     {
       "id": "list_devices",
