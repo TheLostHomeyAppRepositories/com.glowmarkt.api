@@ -4,7 +4,7 @@
   },
   "class": "other",
   "capabilities": [
-    "measure_power", "meter_gas_kwh"
+    "measure_power", "measure_gas_kwh"
   ],
   "energy": {
     "cumulative": true
@@ -28,6 +28,7 @@
         "title": {
           "en": "Login with your Bright App credentials"
         },
+        "logo": "{{driverAssetsPath}}/images/bright_250.png",
         "usernameLabel": {
           "en": "E-mail address"
         },

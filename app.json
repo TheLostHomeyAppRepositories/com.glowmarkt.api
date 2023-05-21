@@ -40,7 +40,7 @@
       "class": "other",
       "capabilities": [
         "measure_power",
-        "meter_gas"
+        "measure_gas_kwh"
       ],
       "energy": {
         "cumulative": true
@@ -64,6 +64,7 @@
             "title": {
               "en": "Login with your Bright App credentials"
             },
+            "logo": "/drivers/smart-meter/assets/images/bright_250.png",
             "usernameLabel": {
               "en": "E-mail address"
             },
@@ -117,5 +118,47 @@
         }
       ]
     }
-  ]
+  ],
+  "capabilities": {
+    "measure_gas_kwh": {
+      "type": "number",
+      "title": {
+        "en": "Gas meter",
+        "nl": "Gasmeter",
+        "de": "Gaszähler",
+        "fr": "Compteur de gaz",
+        "it": "Contatore del gas",
+        "sv": "Gasmätare",
+        "no": "Gassmåler",
+        "es": "Contador de gas",
+        "da": "Gasmåler",
+        "ru": "Счетчик газа",
+        "pl": "Licznik gazowy"
+      },
+      "min": 0,
+      "decimals": 2,
+      "chartType": "spline",
+      "units": {
+        "en": "kWh",
+        "ru": "кВтч"
+      },
+      "desc": {
+        "en": "Gas usage in kilowatt-hour (kWh)",
+        "nl": "Gas gebruik in kilowattuur (kWh)",
+        "de": "Gasverbrauch in Kilowattstunde (kWh)",
+        "fr": "Consommation de gaz en kilowatt-heure (kWh)",
+        "it": "Consumo di gas in kilowattora (kWh)",
+        "sv": "Gasanvändning i kilowattimmar (kWh)",
+        "no": "Gassforbruk i kilowattimer (kWh)",
+        "es": "Consumo de gas en kilovatio hora (kWh)",
+        "da": "Gasforbrug i kilowattime (kWh)",
+        "ru": "Использование газа в киловатт-часах (кВтч)",
+        "pl": "Zużycie gazu w kilowatogodzinach (kWh)"
+      },
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    }
+  }
 }
