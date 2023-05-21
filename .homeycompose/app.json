@@ -29,5 +29,6 @@
   "homepage": "https://glowmarkt.com/",
   "bugs": {
     "url": "https://github.com/jmdraper/com.glowmarkt.api/issues"
-  }
+  },
+  "brandColor": "#f6658e"
 }

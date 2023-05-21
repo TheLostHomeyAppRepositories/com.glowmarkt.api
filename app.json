@@ -31,10 +31,11 @@
   "bugs": {
     "url": "https://github.com/jmdraper/com.glowmarkt.api/issues"
   },
+  "brandColor": "#f6658e",
   "drivers": [
     {
       "name": {
-        "en": "Smart Meter"
+        "en": "Display and CAD"
       },
       "class": "other",
       "capabilities": [
@@ -46,7 +47,9 @@
       "platforms": [
         "local"
       ],
-      "connectivity": [],
+      "connectivity": [
+        "cloud"
+      ],
       "images": {
         "small": "/drivers/smart-meter/assets/images/small.png",
         "large": "/drivers/smart-meter/assets/images/large.png",
