@@ -67,9 +67,6 @@
             "passwordPlaceholder": {
               "en": "password"
             }
-          },
-          "navigation": {
-            "next": "list_devices"
           }
         },
         {
