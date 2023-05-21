@@ -39,7 +39,8 @@
       },
       "class": "other",
       "capabilities": [
-        "measure_power"
+        "measure_power",
+        "meter_gas"
       ],
       "energy": {
         "cumulative": true
