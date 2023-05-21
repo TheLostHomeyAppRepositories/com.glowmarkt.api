@@ -69,7 +69,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
 
       function veToDevice(virtualEntity) {
         // create store object
-        let deviceStore = {elec_cons_res: virtualEntity.resources[0].resourceId, gas_cons_res: virtualEntity.resources[2].resourceId, token: token};
+        let deviceStore = {elec_cons_res: virtualEntity.resources[0].resourceId, token: token};
 
         // return a homey device object
         return {name:`${virtualEntity.name} for ${virtualEntity.postalCode}`, data: {id:virtualEntity.veId}, settings: {username, password}, store: deviceStore};

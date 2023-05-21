@@ -7,7 +7,6 @@ const { json } = require('stream/consumers');
 // fixed app ID
 const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 let poll;
-let gasPoll;
 
 class GlowmarktUKSmartMeter_device extends Device {
 
@@ -20,7 +19,6 @@ class GlowmarktUKSmartMeter_device extends Device {
     // get IDs from store
     let token = this.getStoreValue('token');
     let elec_cons_res = this.getStoreValue('elec_cons_res');
-    let gas_cons_res = this.getStoreValue('gas_cons_res');
 
     // define helper function to get current value for a resource
     async function getCurrentResourceValue(resourceId) {
@@ -48,15 +46,6 @@ class GlowmarktUKSmartMeter_device extends Device {
           this.setCapabilityValue('measure_power', value).catch(this.error);
         });
     }, 10000);
-
-      // poll every 10 seconds and set measure_gas capability to the gas meter value retrieved from API
-      this.log('Initiating gas polling');
-      gasPoll = setInterval(() => {
-        getCurrentResourceValue(gas_cons_res)
-          .then(value => {
-            this.setCapabilityValue('measure_gas_kwh', value).catch(this.error);
-          });
-      }, 10000);
   }
 
   /**
@@ -116,9 +105,6 @@ class GlowmarktUKSmartMeter_device extends Device {
     this.log('Smart meter device has been deleted');
     if (poll != null) {
       clearInterval(poll);
-    };
-    if (gasPoll != null) {
-      clearInterval(gasPoll);
     };
   }
 
