@@ -1,6 +1,7 @@
 'use strict';
 
 const { Device } = require('homey');
+const { get } = require('https');
 const fetch = require('node-fetch');
 const { json } = require('stream/consumers');
 // fixed app ID
@@ -19,20 +20,30 @@ class GlowmarktUKSmartMeter_device extends Device {
     let token = this.getStoreValue('token');
     let elec_cons_res = this.getStoreValue('elec_cons_res');
 
-    // poll every 10 seconds and set measure_power capability to the power value retrieved from API
-    this.log('Initiating polling');
-    poll = setInterval(() => {
-      fetch(`https://api.glowmarkt.com/api/v0-1/resource/${elec_cons_res}/current`, {
-        method: 'GET', 
+    // define helper function to get current value for a resource
+    async function getCurrentResourceValue(resourceId) {
+      let response  = await fetch(`https://api.glowmarkt.com/api/v0-1/resource/${resourceId}/current`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'token': token,
           'applicationId': APP_ID
-        }})
-        .then(res => res.json())
-        .then(json => {
-          let power = json.data[0][1];
-          this.setCapabilityValue('measure_power', power).catch(this.error);
+        }});
+      let resource = await response.json();
+      return resource.data[0][1];
+    }
+
+    // // get initial value
+    // this.log('Getting initial value');
+    // getCurrentResourceValue(elec_cons_res)
+    //   .then(currentVal => this.setCapabilityValue('measure_power', currentVal).catch(this.error));
+
+    // poll every 10 seconds and set measure_power capability to the power value retrieved from API
+    this.log('Initiating polling');
+    poll = setInterval(() => {
+      getCurrentResourceValue(elec_cons_res)
+        .then(value => {
+          this.setCapabilityValue('measure_power', value).catch(this.error);
         });
     }, 10000);
   }
