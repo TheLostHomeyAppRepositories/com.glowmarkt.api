@@ -10,7 +10,7 @@
     "en": "Glowmarkt"
   },
   "description": {
-    "en": "Connects to UK smart meters via the Glowmarkt API"
+    "en": "Monitor electricity and gas consumption with UK smart meters"
   },
   "category": [
     "tools"

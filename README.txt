@@ -1,1 +1,1 @@
-Monitor electricity and gas consumption via your UK Smart Meter
+Monitor electricity and gas consumption with UK Smart Meters
