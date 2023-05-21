@@ -3,6 +3,7 @@
 const { Driver } = require('homey');
 const fetch = require('node-fetch');
 const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
+let token;
 
 class GlowmarktUKSmartMeter_driver extends Driver {
 
@@ -41,6 +42,9 @@ class GlowmarktUKSmartMeter_driver extends Driver {
       this.log('Auth valid: ' + authValid);
 
       if (typeof authValid == 'boolean') {
+        if (authValid) { 
+          token = authJSON.token; 
+        }
         return authValid;
       } else {
         // should probably throw an error here instead
@@ -49,18 +53,39 @@ class GlowmarktUKSmartMeter_driver extends Driver {
     });
 
     session.setHandler("list_devices", async () => {
-      // replace this at some point with logic to return list of devices available
-      return [
-        {
-          name: 'Smart Meter',
-          data: {
-            id: 'my-smart-meter',
-          },
-          settings: {
-            username, password
-          }
+      // get list of resources from API
+      let veidResponse = await fetch('https://api.glowmarkt.com/api/v0-1/virtualentity', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'applicationId': APP_ID,
+          'token': token
         }
-      ];
+      });
+      let veidJSON = await veidResponse.json();
+      let resources = veidJSON[0].resources;
+      this.log('Resources: ' + resources);
+
+      // map these to an array of devices for pairing
+      let devices = resources.map(resourceToDevice);
+
+      function resourceToDevice(resource) {
+        return {name:resource.name, data: {id:resource.resourceId}, settings: {username,password}};
+      }
+
+      return devices;
+
+      // return [
+      //   {
+      //     name: 'Smart Meter',
+      //     data: {
+      //       id: 'my-smart-meter',
+      //     },
+      //     settings: {
+      //       username, password
+      //     }
+      //   }
+      // ];
     });
   }
 
