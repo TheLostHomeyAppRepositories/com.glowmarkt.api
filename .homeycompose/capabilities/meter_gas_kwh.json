@@ -1,0 +1,80 @@
+{
+    "type": "number",
+    "title": {
+      "en": "Gas meter",
+      "nl": "Gasmeter",
+      "de": "Gaszähler",
+      "fr": "Compteur de gaz",
+      "it": "Contatore del gas",
+      "sv": "Gasmätare",
+      "no": "Gassmåler",
+      "es": "Contador de gas",
+      "da": "Gasmåler",
+      "ru": "Счетчик газа",
+      "pl": "Licznik gazowy"
+    },
+    "min": 0,
+    "decimals": 2,
+    "chartType": "spline",
+    "units": {
+      "en": "kWh",
+      "ru": "кВтч"
+    },
+    "desc": {
+        "en": "Gas usage in kilowatt-hour (kWh)",
+        "nl": "Gas gebruik in kilowattuur (kWh)",
+        "de": "Gasverbrauch in Kilowattstunde (kWh)",
+        "fr": "Consommation de gaz en kilowatt-heure (kWh)",
+        "it": "Consumo di gas in kilowattora (kWh)",
+        "sv": "Gasanvändning i kilowattimmar (kWh)",
+        "no": "Gassforbruk i kilowattimer (kWh)",
+        "es": "Consumo de gas en kilovatio hora (kWh)",
+        "da": "Gasforbrug i kilowattime (kWh)",
+        "ru": "Использование газа в киловатт-часах (кВтч)",
+        "pl": "Zużycie gazu w kilowatogodzinach (kWh)"
+    },
+    "insights": true,
+    "getable": true,
+    "setable": false,
+    "uiComponent": "sensor",
+    "$flow": {
+      "triggers": [
+        {
+          "id": "meter_gas_changed",
+          "title": {
+            "en": "The gas meter changed",
+            "nl": "De gasmeter is veranderd",
+            "de": "Der Gaszähler hat sich geändert",
+            "fr": "Le compteur de gaz a changé",
+            "it": "Il contatore del gas è cambiato",
+            "sv": "Gasmätaren ändrades",
+            "no": "Gassmåleren ble endret",
+            "es": "El contador de gas ha cambiado",
+            "da": "Gasmåleren ændrede sig",
+            "ru": "Измерения счетчика газа изменились",
+            "pl": "Zmiana w liczniku gazowym"
+          },
+          "tokens": [
+            {
+              "name": "meter_gas",
+              "title": {
+                "en": "Gas meter",
+                "nl": "Gasmeter",
+                "de": "Gaszähler",
+                "fr": "Compteur de gaz",
+                "it": "Contatore del gas",
+                "sv": "Gasmätare",
+                "no": "Gassmåler",
+                "es": "Contador de gas",
+                "da": "Gasmåler",
+                "ru": "Счетчик газа",
+                "pl": "Licznik gazowy"
+              },
+              "type": "number",
+              "example": 25
+            }
+          ]
+        }
+      ]
+    }
+  }

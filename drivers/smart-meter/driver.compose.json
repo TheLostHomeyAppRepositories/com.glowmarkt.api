@@ -4,7 +4,7 @@
   },
   "class": "other",
   "capabilities": [
-    "measure_power", "meter_gas"
+    "measure_power", "meter_gas_kwh"
   ],
   "energy": {
     "cumulative": true
