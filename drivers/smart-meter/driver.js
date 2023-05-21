@@ -62,30 +62,20 @@ class GlowmarktUKSmartMeter_driver extends Driver {
           'token': token
         }
       });
-      let veidJSON = await veidResponse.json();
-      let resources = veidJSON[0].resources;
-      this.log('Resources: ' + resources);
+      let virtualEntities = await veidResponse.json();
 
       // map these to an array of devices for pairing
-      let devices = resources.map(resourceToDevice);
+      let devices = virtualEntities.map(veToDevice);
 
-      function resourceToDevice(resource) {
-        return {name:resource.name, data: {id:resource.resourceId}, settings: {username,password}};
+      function veToDevice(virtualEntity) {
+        // create store object
+        let deviceStore = {elec_cons_res: virtualEntity.resources[0].resourceId, token: token};
+
+        // return a homey device object
+        return {name:`${virtualEntity.name} for ${virtualEntity.postalCode}`, data: {id:virtualEntity.veId}, settings: {username, password}, store: deviceStore};
       }
 
       return devices;
-
-      // return [
-      //   {
-      //     name: 'Smart Meter',
-      //     data: {
-      //       id: 'my-smart-meter',
-      //     },
-      //     settings: {
-      //       username, password
-      //     }
-      //   }
-      // ];
     });
   }
 

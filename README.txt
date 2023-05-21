@@ -1,1 +1,1 @@
-Connects to UK smart meters via the Glowmarkt API
+Monitor electricity and gas consumption via your UK Smart Meter

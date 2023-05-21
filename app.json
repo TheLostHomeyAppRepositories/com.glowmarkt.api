@@ -8,7 +8,7 @@
     "local"
   ],
   "name": {
-    "en": "Glowmarkt UK Smart Meter"
+    "en": "Glowmarkt"
   },
   "description": {
     "en": "Connects to UK smart meters via the Glowmarkt API"
@@ -25,6 +25,11 @@
   "author": {
     "name": "Jonathan Draper",
     "email": "account+homey@myinbox.me.uk"
+  },
+  "source": "https://github.com/jmdraper/com.glowmarkt.api",
+  "homepage": "https://glowmarkt.com/",
+  "bugs": {
+    "url": "https://github.com/jmdraper/com.glowmarkt.api/issues"
   },
   "drivers": [
     {
@@ -67,9 +72,6 @@
             "passwordPlaceholder": {
               "en": "password"
             }
-          },
-          "navigation": {
-            "next": "list_devices"
           }
         },
         {
