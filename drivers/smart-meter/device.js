@@ -46,6 +46,15 @@ class GlowmarktUKSmartMeter_device extends Device {
           this.setCapabilityValue('measure_power', value).catch(this.error);
         });
     }, 10000);
+
+      // poll every 10 seconds and set measure_gas capability to the gas meter value retrieved from API
+      this.log('Initiating polling');
+      poll = setInterval(() => {
+        getCurrentResourceValue(elec_cons_res)
+          .then(value => {
+            this.setCapabilityValue('measure_power', value).catch(this.error);
+          });
+      }, 10000);
   }
 
   /**
