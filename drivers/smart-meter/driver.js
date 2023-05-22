@@ -39,7 +39,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
       });
       let authJSON = await authResponse.json();
       let authValid = authJSON.valid;
-      this.log('Auth valid: ' + authValid);
+      this.log('Login credentials valid: ' + authValid);
 
       if (typeof authValid == 'boolean') {
         if (authValid) { 
@@ -47,7 +47,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
         }
         return authValid;
       } else {
-        // should probably throw an error here instead
+        this.log('Login credentials response from API did not contain a boolean in the property "valid"');
         return false;
       }
     });
@@ -68,13 +68,25 @@ class GlowmarktUKSmartMeter_driver extends Driver {
       let devices = virtualEntities.map(veToDevice);
 
       function veToDevice(virtualEntity) {
+        // find a resource object in the resources array whose name property is 'electricity consumption'
+        let resources = virtualEntity.resources;
+        function isElecCons(resource) {
+          return resource.name === 'electricity consumption';
+        }
+        let elec_cons_res = resources.find(isElecCons);
+        // if no such resource found, just return the first resource and hope that's right
+        let elec_cons_res_id = virtualEntity.resources[0].resourceId;
+        if (elec_cons_res) {
+          elec_cons_res_id = elec_cons_res.resourceId;
+        } 
         // create store object
-        let deviceStore = {elec_cons_res: virtualEntity.resources[0].resourceId, token: token};
+        let deviceStore = {elec_cons_res: elec_cons_res_id, token: token};
 
         // return a homey device object
         return {name:`${virtualEntity.name} for ${virtualEntity.postalCode}`, data: {id:virtualEntity.veId}, settings: {username, password}, store: deviceStore};
       }
 
+      // finally, return the array of devices available to pair
       return devices;
     });
   }
