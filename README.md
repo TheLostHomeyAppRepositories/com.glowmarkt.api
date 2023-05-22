@@ -1,4 +1,4 @@
-# Glowmarkt UK Smart Meter
+# Homey app for Glowmarkt UK Smart Meter
 
 The Glowmarkt Display and CAD (Consumer Access Display) allows you to see real time and historical usage information from your UK smart meter. Versions are available to connect to most UK SMETS 1 and SMETS 2 meters. 
 
