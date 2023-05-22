@@ -4,7 +4,7 @@
   },
   "class": "other",
   "capabilities": [
-    "measure_power", "meter_gas"
+    "measure_power"
   ],
   "energy": {
     "cumulative": true
@@ -25,6 +25,7 @@
       "id": "login_credentials",
       "template": "login_credentials",
       "options": {
+        "logo": "{{driverAssetsPath}}/images/bright75.png",
         "title": {
           "en": "Login with your Bright App credentials"
         },

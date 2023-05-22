@@ -39,7 +39,7 @@ class GlowmarktUKSmartMeter_device extends Device {
     //   .then(currentVal => this.setCapabilityValue('measure_power', currentVal).catch(this.error));
 
     // poll every 10 seconds and set measure_power capability to the power value retrieved from API
-    this.log('Initiating polling');
+    this.log('Initiating power polling');
     poll = setInterval(() => {
       getCurrentResourceValue(elec_cons_res)
         .then(value => {
