@@ -1,6 +1,6 @@
 # Homey app for Glowmarkt UK Smart Meter
 
-The Glowmarkt Display and CAD (Consumer Access Display) allows you to see real time and historical usage information from your UK smart meter. Versions are available to connect to most UK SMETS 1 and SMETS 2 meters. 
+The [Glowmarkt Display and CAD \(Consumer Access Display\)](https://shop.glowmarkt.com) allows you to see real time and historical usage information from your UK smart meter. Versions are available to connect to most UK SMETS 1 and SMETS 2 meters. 
 
 You will need to download the Bright app by Hildebrand Technology Limited and create an account to get started. You must have an account before you can purchase a Display and CAD from the Glowmarkt shop. Make sure you get the right version of the device for your meter (SMETS1 or SMETS2). See here for more information: https://energyguide.org.uk/smets2-smart-meters/.
 
