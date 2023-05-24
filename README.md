@@ -6,6 +6,8 @@ You will need to download the Bright app by Hildebrand Technology Limited and cr
 
 Once you have your device set up and working with the Bright app, you can add it to Homey. This app currently supports a single device: the Display and CAD. (In theory, you should also be able to use this to connect a Glowmarkt Zigbee CAD as well but I don't have one of those devices so have not been able to test.)
 
+## Setting up
+
 When you add the device in Homey, you will be asked to enter your Bright app credentials. This is the same username and password you use to connect in your Bright app. The pairing process will then show any 'virtual entities' connected to your account. A virtual entity broadly equates to a single metered supply so generally there should be exactly one of these. 
 
 Once you have paired your device, you should see current power usage readings appearing right away on the device tile. The device will also appear as a Smart Meter in the energy tab in the Homey app. The smart meter measures your home's total energy usage and so Homey subtracts the power usage of all other devices it knows about from this figure and shows the difference as 'Other'. More information on this feature here: https://support.homey.app/hc/en-us/articles/360010187820-Saving-energy-with-Homey-Energy
