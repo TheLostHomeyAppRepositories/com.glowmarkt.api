@@ -23,7 +23,7 @@ class GlowmarktUKSmartMeter_device extends Device {
     let elec_cons_res = this.getStoreValue('elec_cons_res');
 
     // set device as initially unavailable
-    await this.setUnavailable();
+    this.setUnavailable().catch(this.error);
 
     // define helper function to get current value for a resource
     async function getCurrentResourceValue(resourceId) {
