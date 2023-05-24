@@ -61,7 +61,7 @@ class GlowmarktUKSmartMeter_device extends Device {
             // if polling error, set device as unavailable
             this.setUnavailable().catch(this.error);
           }
-        })
+        }).catch(this.error);
 
     // if pollFrequency not already set, get poll frequency from device settings or default to 10
     if (!pollFrequency) {
@@ -91,6 +91,7 @@ class GlowmarktUKSmartMeter_device extends Device {
             this.setUnavailable().catch(this.error);
           }
         })
+        .catch(this.error);
       }, pollFrequency);
   }
 
