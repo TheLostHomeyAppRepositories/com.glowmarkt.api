@@ -4,7 +4,7 @@ const { Device } = require('homey');
 const { get } = require('https');
 const fetch = require('node-fetch');
 const { json } = require('stream/consumers');
-// fixed app ID
+// fixed app ID for Glowmarkt Bright app
 const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 let poll;
 let pollFrequency;
