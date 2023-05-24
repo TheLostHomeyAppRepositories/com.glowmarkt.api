@@ -101,7 +101,7 @@
           },
           "value": "username",
           "hint": {
-            "en": "The username for your Bright app account."
+            "en": "The username for your Bright app account"
           }
         },
         {
@@ -112,7 +112,23 @@
           },
           "value": "password",
           "hint": {
-            "en": "The password for your Bright app account."
+            "en": "The password for your Bright app account"
+          }
+        },
+        {
+          "id": "pollFrequency",
+          "type": "number",
+          "label": {
+            "en": "Update frequency"
+          },
+          "value": 10,
+          "hint": {
+            "en": "How often current usage is updated"
+          },
+          "min": 10,
+          "max": 3600,
+          "units": {
+            "en": "seconds"
           }
         }
       ]
