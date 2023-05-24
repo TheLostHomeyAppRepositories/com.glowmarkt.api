@@ -52,6 +52,7 @@ class GlowmarktUKSmartMeter_device extends Device {
           throw new Error('API call returned error (likely credentials did not match)');
         }
       } catch(error) {
+        thisDev.log('Device set as unavailable');
         thisDev.setUnavailable().catch();
       }
     }
