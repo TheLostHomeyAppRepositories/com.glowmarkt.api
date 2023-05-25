@@ -1,5 +1,8 @@
 {
   "1.0.0": {
     "en": "Initial test version"
+  },
+  "1.0.1": {
+    "en": "Icons, reaadmes and better error handling"
   }
 }
