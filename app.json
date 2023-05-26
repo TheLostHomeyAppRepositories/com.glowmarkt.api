@@ -39,7 +39,8 @@
       },
       "class": "other",
       "capabilities": [
-        "measure_power"
+        "measure_power",
+        "tariff"
       ],
       "energy": {
         "cumulative": true
@@ -133,5 +134,21 @@
         }
       ]
     }
-  ]
+  ],
+  "capabilities": {
+    "tariff": {
+      "type": "number",
+      "title": {
+        "en": "Tariff"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "£/kWh"
+      },
+      "insights": true,
+      "decimals": 2
+    }
+  }
 }
