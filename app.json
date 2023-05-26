@@ -145,7 +145,7 @@
       "getable": true,
       "setable": false,
       "units": {
-        "en": "£/kWh"
+        "en": "p/kWh"
       },
       "insights": true,
       "decimals": 2

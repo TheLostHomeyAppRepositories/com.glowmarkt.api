@@ -5,7 +5,7 @@
     "uiComponent": "sensor",
     "getable": true,
     "setable": false,
-    "units": { "en": "£/kWh" },
+    "units": { "en": "p/kWh" },
     "insights": true,
     "decimals": 2
   }
