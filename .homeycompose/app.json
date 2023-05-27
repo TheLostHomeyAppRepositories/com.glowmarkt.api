@@ -30,5 +30,13 @@
   "bugs": {
     "url": "https://github.com/jmdraper/com.glowmarkt.api/issues"
   },
-  "brandColor": "#f6658e"
+  "brandColor": "#f6658e",
+  "tags": {
+    "en": [
+      "smart meter",
+      "electricity",
+      "power"
+    ]
+  },
+  "homeyCommunityTopicId": 81210
 }
