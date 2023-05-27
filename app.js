@@ -2,7 +2,7 @@
 
 const Homey = require('homey');
 
-class MyApp extends Homey.App {
+class GlowmarktApp extends Homey.App {
 
   /**
    * onInit is called when the app is initialized.
@@ -13,4 +13,4 @@ class MyApp extends Homey.App {
 
 }
 
-module.exports = MyApp;
+module.exports = GlowmarktApp;

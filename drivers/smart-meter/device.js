@@ -1,15 +1,9 @@
 'use strict';
 
 const { Device } = require('homey');
-const { get } = require('https');
 const fetch = require('node-fetch');
-const { json } = require('stream/consumers');
-// fixed app ID for Glowmarkt Bright app
-const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
-let poll;
-let tariffPoll;
-let pollFrequency;
-let settings;
+  // app ID for Bright app - used in API calls to Glowmarkt API
+  const BRIGHT_APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 
 class GlowmarktUKSmartMeter_device extends Device {
 
@@ -35,7 +29,7 @@ class GlowmarktUKSmartMeter_device extends Device {
           headers: {
             'Content-Type': 'application/json',
             'token': token,
-            'applicationId': APP_ID
+            'applicationId': BRIGHT_APP_ID
         }});
         // parse JSON
         let resource = await response.json();
@@ -70,7 +64,7 @@ class GlowmarktUKSmartMeter_device extends Device {
         headers: {
           'Content-Type': 'application/json',
           'token': token,
-          'applicationId': APP_ID
+          'applicationId': BRIGHT_APP_ID
       }});
       // parse JSON
       let resource = await response.json();
@@ -101,25 +95,25 @@ class GlowmarktUKSmartMeter_device extends Device {
     updateTariff(elec_cons_res, this);
 
     // if pollFrequency not already set, get poll frequency from device settings or default to 10
-    if (!pollFrequency) {
-      settings = this.getSettings();
+    let settings = this.getSettings();
+    if (!this.pollFrequency) {
       if (settings.pollFrequency) {
-        pollFrequency = (settings.pollFrequency * 1000);
-        this.log(`Poll frequency read from settings as ${pollFrequency}`);
+        this.pollFrequency = (settings.pollFrequency * 1000);
+        this.log(`Poll frequency read from settings as ${this.pollFrequency}`);
       } else {
         this.log('Could not get poll frequency from settings; defaulting to 10000');
-        pollFrequency = 10000;
+        this.pollFrequency = 10000;
       }
     }
     // poll every {pollFrequency} seconds and set measure_power capability to the power value retrieved from API
-    this.log(`Initiating power polling with frequency ${pollFrequency}`);
-    poll = setInterval(() => {
+    this.log(`Initiating power polling with frequency ${this.pollFrequency}`);
+    this.poll = setInterval(() => {
       updateDevice(elec_cons_res, this);
-    }, pollFrequency);
+    }, this.pollFrequency);
 
     // poll every minute and set tariff capability to the power value retrieved from API
     this.log(`Initiating tariff polling`);
-    poll = setInterval(() => {
+    this.tariffPoll = setInterval(() => {
       updateTariff(elec_cons_res, this);
     }, 60000);
   }
@@ -155,7 +149,7 @@ class GlowmarktUKSmartMeter_device extends Device {
         method: 'POST', 
         headers: {
           'Content-Type': 'application/json',
-          'applicationId': APP_ID
+          'applicationId': GlowmarktApp.APP_ID
         },
         body: JSON.stringify(auth)
       });
@@ -172,13 +166,13 @@ class GlowmarktUKSmartMeter_device extends Device {
 
     // if poll frequency changed, update variable
     if (changedKeys.includes('pollFrequency')) {
-      pollFrequency = (newSettings.pollFrequency * 1000);
+      this.pollFrequency = (newSettings.pollFrequency * 1000);
     }
 
     // for all changes, cancel existing polling and re-initialise device
     this.log('Re-initialising device');
-    if (poll) {
-      clearInterval(poll);
+    if (this.poll) {
+      clearInterval(this.poll);
     };
     this.onInit();
   }
@@ -197,11 +191,10 @@ class GlowmarktUKSmartMeter_device extends Device {
    */
   async onDeleted() {
     this.log('Display and CAD (API) has been deleted');
-    if (poll) {
-      clearInterval(poll);
+    if (this.poll) {
+      clearInterval(this.poll);
     };
   }
-
 }
 
 module.exports = GlowmarktUKSmartMeter_device;
