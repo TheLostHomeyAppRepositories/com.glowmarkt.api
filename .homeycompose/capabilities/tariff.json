@@ -7,5 +7,6 @@
     "setable": false,
     "units": { "en": "p/kWh" },
     "insights": true,
-    "decimals": 2
+    "decimals": 2,
+    "icon": "/assets/tariff.svg"
   }
