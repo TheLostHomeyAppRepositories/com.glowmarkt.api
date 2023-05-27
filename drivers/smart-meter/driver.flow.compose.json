@@ -1,0 +1,17 @@
+
+{
+    "triggers": [
+      {
+        "id": "tariff_changed",
+        "title": { "en": "Tariff changed" },
+        "tokens": [
+            {
+              "name": "tariff",
+              "type": "number",
+              "title": { "en": "Tariff" },
+              "example": { "en": "45.08p/kWh" }
+            }
+          ]
+      }
+    ]
+  }

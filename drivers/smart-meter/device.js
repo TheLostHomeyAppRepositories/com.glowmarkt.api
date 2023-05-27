@@ -7,6 +7,7 @@ const { json } = require('stream/consumers');
 // fixed app ID for Glowmarkt Bright app
 const APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 let poll;
+let tariffPoll;
 let pollFrequency;
 let settings;
 
@@ -49,16 +50,55 @@ class GlowmarktUKSmartMeter_device extends Device {
           thisDev.setCapabilityValue('measure_power', resource.data[0][1]).catch();
         } else {
           // if response contained an error, set device unavailable
-          throw new Error('API call returned error (likely credentials did not match)');
+          throw new Error('Get current power API call returned error (likely credentials did not match)');
         }
       } catch(error) {
+        // if device was available, set as unavailable
+        if (thisDev.getAvailable()) {
+          thisDev.log('Device set as unavailable');
+          thisDev.setUnavailable().catch();
+        }
+      }
+    }
+
+   // get latest tariff and update
+   async function updateTariff(resourceId, thisDev) {
+    try {
+      // fetch current resource value from API
+      let response  = await fetch(`https://api.glowmarkt.com/api/v0-1/resource/${resourceId}/tariff`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token,
+          'applicationId': APP_ID
+      }});
+      // parse JSON
+      let resource = await response.json();
+
+      // if JSON contains value, set device available if it wasn't and then set its value
+      if (!resource.error) {
+        // if device was unavailable, set available
+        if (!thisDev.getAvailable()) {
+          thisDev.setAvailable().catch();
+        }
+        // set measure_power value on device
+        thisDev.setCapabilityValue('tariff', Number(resource.data[0].currentRates.rate)).catch();
+      } else {
+        // if response contained an error, set device unavailable
+        throw new Error('Get current tariff API call returned error (likely credentials did not match)');
+      }
+    } catch(error) {
+      // if device was available, set as unavailable
+      if (thisDev.getAvailable()) {
         thisDev.log('Device set as unavailable');
         thisDev.setUnavailable().catch();
       }
     }
+  }
 
     // initial poll
     updateDevice(elec_cons_res, this);
+    updateTariff(elec_cons_res, this);
 
     // if pollFrequency not already set, get poll frequency from device settings or default to 10
     if (!pollFrequency) {
@@ -76,6 +116,12 @@ class GlowmarktUKSmartMeter_device extends Device {
     poll = setInterval(() => {
       updateDevice(elec_cons_res, this);
     }, pollFrequency);
+
+    // poll every minute and set tariff capability to the power value retrieved from API
+    this.log(`Initiating tariff polling`);
+    poll = setInterval(() => {
+      updateTariff(elec_cons_res, this);
+    }, 60000);
   }
 
   /**

@@ -1,0 +1,12 @@
+
+{
+    "type": "number",
+    "title": { "en": "Tariff" },
+    "uiComponent": "sensor",
+    "getable": true,
+    "setable": false,
+    "units": { "en": "p/kWh" },
+    "insights": true,
+    "decimals": 2,
+    "icon": "/assets/tariff.svg"
+  }
