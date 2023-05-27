@@ -4,5 +4,8 @@
   },
   "1.0.1": {
     "en": "Icons, reaadmes and better error handling"
+  },
+  "1.1.0": {
+    "en": "Added current electricity tariff"
   }
 }
