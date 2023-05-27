@@ -32,6 +32,35 @@
     "url": "https://github.com/jmdraper/com.glowmarkt.api/issues"
   },
   "brandColor": "#f6658e",
+  "flow": {
+    "triggers": [
+      {
+        "id": "tariff_changed",
+        "title": {
+          "en": "Tariff changed"
+        },
+        "tokens": [
+          {
+            "name": "tariff",
+            "type": "number",
+            "title": {
+              "en": "Tariff"
+            },
+            "example": {
+              "en": "45.08p/kWh"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=smart-meter"
+          }
+        ]
+      }
+    ]
+  },
   "drivers": [
     {
       "name": {
