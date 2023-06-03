@@ -20,7 +20,7 @@ class GlowmarktUKSmartMeter_device extends Device {
     // set device as initially unavailable
     this.setUnavailable().catch(this.error);
 
-    // core function that fetches latest value, updates device value and sets device availability
+    // core function that fetches latest value, updates device value and sets device availability; also check for triggers
     async function updateDevice(resourceId, thisDev) {
       try {
         // fetch current resource value from API
@@ -53,6 +53,10 @@ class GlowmarktUKSmartMeter_device extends Device {
           thisDev.setUnavailable().catch();
         }
       }
+
+      // fire trigger cards
+      // to start with, just trigger this on every change - until I add argument and run listener
+      this.driver.trigger_tariff_becomes_gt(this, {}, {});
     }
 
    // get latest tariff and update

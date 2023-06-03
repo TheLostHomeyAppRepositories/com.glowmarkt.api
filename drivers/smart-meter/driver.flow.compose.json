@@ -12,6 +12,19 @@
               "example": { "en": "45.08p/kWh" }
             }
           ]
+      },
+      {
+        "id": "tariff_becomes_gt",
+        "title": { "en": "Tariff becomes greater than...  " },
+        "titleFormatted": { "en": "Tariff becomes greater than [[threshold]]" },
+        "tokens": [
+          {
+            "name": "tariff",
+            "type": "number",
+            "title": { "en": "Tariff" },
+            "example": { "en": "45.08p/kWh" }
+          }
+        ]
       }
     ]
   }

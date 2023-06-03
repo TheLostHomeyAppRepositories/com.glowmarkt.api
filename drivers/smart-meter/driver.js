@@ -12,6 +12,17 @@ class GlowmarktUKSmartMeter_driver extends Driver {
    */
   async onInit() {
     this.log('Glowmarkt UK Smart Meter driver has been initialized');
+
+    // get flow cards
+    this._tarrif_becomes_gt = this.homey.getDeviceTriggerCard("tariff_becomes_gt");
+
+    // trigger functions
+    function trigger_tariff_becomes_gt(device, tokens, state) {
+      this._tariff_becomes_gt
+        .trigger(device, tokens, state)
+        .then(this.log('Triggered tariff becomes greater than'))
+        .catch(this.error);
+    }
   }
 
   async onPair(session) {
