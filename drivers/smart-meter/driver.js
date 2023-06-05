@@ -17,6 +17,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
   async onPair(session) {
     let username;
     let password;
+    let token;
 
     session.setHandler("login", async (data) => {
       username = data.username;
@@ -43,7 +44,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
 
       if (typeof authValid == 'boolean') {
         if (authValid) { 
-          this.token = authJSON.token; 
+          token = authJSON.token; 
         }
         return authValid;
       } else {
@@ -59,7 +60,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
         headers: {
           'Content-Type': 'application/json',
           'applicationId': BRIGHT_APP_ID,
-          'token': this.token
+          'token': token
         }
       });
       let virtualEntities = await veidResponse.json();
@@ -80,7 +81,7 @@ class GlowmarktUKSmartMeter_driver extends Driver {
           elec_cons_res_id = elec_cons_res.resourceId;
         } 
         // create store object
-        let deviceStore = {elec_cons_res: elec_cons_res_id, token: this.token};
+        let deviceStore = {elec_cons_res: elec_cons_res_id, token: token};
 
         // return a homey device object
         return {name:`${virtualEntity.name} for ${virtualEntity.postalCode}`, data: {id:virtualEntity.veId}, settings: {username, password}, store: deviceStore};
