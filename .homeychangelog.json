@@ -10,5 +10,8 @@
   },
   "1.1.1": {
     "en": "Added electricity tariff"
+  },
+  "1.1.2": {
+    "en": "Fixed crash when deleting device"
   }
 }
