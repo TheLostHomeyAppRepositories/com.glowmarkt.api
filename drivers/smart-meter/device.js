@@ -193,6 +193,7 @@ class GlowmarktUKSmartMeter_device extends Device {
     this.log('Display and CAD (API) has been deleted');
     if (this.poll) {
       clearInterval(this.poll);
+      clearInterval(this.tariffPoll);
     };
   }
 }
