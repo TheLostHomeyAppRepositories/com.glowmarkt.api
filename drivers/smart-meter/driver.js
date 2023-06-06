@@ -1,9 +1,10 @@
 'use strict';
 
 const { Driver } = require('homey');
-const fetch = require('node-fetch');
-  // app ID for Bright app - used in API calls to Glowmarkt API
-  const BRIGHT_APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
+// const fetch = require('node-fetch');
+
+// app ID for Bright app - used in API calls to Glowmarkt API
+const BRIGHT_APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
 
 class GlowmarktUKSmartMeter_driver extends Driver {
 
