@@ -107,13 +107,13 @@ class GlowmarktUKSmartMeter_device extends Device {
     }
     // poll every {pollFrequency} seconds and set measure_power capability to the power value retrieved from API
     this.log(`Initiating power polling with frequency ${this.pollFrequency}`);
-    this.poll = setInterval(() => {
+    this.poll = this.homey.setInterval(() => {
       updateDevice(elec_cons_res, this);
     }, this.pollFrequency);
 
     // poll every minute and set tariff capability to the power value retrieved from API
     this.log(`Initiating tariff polling`);
-    this.tariffPoll = setInterval(() => {
+    this.tariffPoll = this.homey.setInterval(() => {
       updateTariff(elec_cons_res, this);
     }, 60000);
   }
@@ -192,8 +192,8 @@ class GlowmarktUKSmartMeter_device extends Device {
   async onDeleted() {
     this.log('Display and CAD (API) has been deleted');
     if (this.poll) {
-      clearInterval(this.poll);
-      clearInterval(this.tariffPoll);
+      this.homey.clearInterval(this.poll);
+      this.homey.clearInterval(this.tariffPoll);
     };
   }
 }
