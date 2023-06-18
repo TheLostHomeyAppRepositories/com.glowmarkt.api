@@ -13,5 +13,8 @@
   },
   "1.1.2": {
     "en": "Fixed crash when deleting device"
+  },
+  "1.1.3": {
+    "en": "Fixed potential issue on app uninstall"
   }
 }
