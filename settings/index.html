@@ -1,0 +1,466 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+  <style>
+    .glow-hidden { display: none !important; }
+    .glow-row { display: flex; gap: 8px; align-items: center; }
+    .glow-row .homey-form-input { flex: 1; min-width: 0; }
+    .glow-box { border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 8px; padding: 12px; margin: 12px 0; }
+    .glow-box dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; }
+    .glow-box dt { opacity: 0.7; }
+    .glow-box dd { margin: 0; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+    .glow-note { font-size: 0.9em; opacity: 0.8; }
+    .glow-message { margin-top: 8px; font-size: 0.9em; }
+    .glow-message.error, .glow-error { color: #d93025; }
+    .glow-state { display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: 600; background: rgba(128, 128, 128, 0.2); }
+    .glow-state.running { background: rgba(52, 168, 83, 0.2); }
+    .glow-state.error { background: rgba(217, 48, 37, 0.2); }
+    .glow-unit h3 { margin: 0 0 4px; font-size: 1em; }
+    .glow-unit table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-top: 6px; }
+    .glow-unit th, .glow-unit td { text-align: left; padding: 2px 6px 2px 0; vertical-align: top; }
+    .glow-log { list-style: none; padding: 0; margin: 8px 0 0; }
+    .glow-log li { border-top: 1px solid rgba(128, 128, 128, 0.25); padding: 6px 0; font-size: 0.85em; }
+    .glow-log .meta { opacity: 0.7; }
+    .glow-log pre { white-space: pre-wrap; word-break: break-all; margin: 4px 0 0; font-family: ui-monospace, Menlo, monospace; }
+    .glow-buttons { display: flex; gap: 8px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1 class="homey-title" data-i18n="settings.title"></h1>
+  <p class="homey-subtitle" data-i18n="settings.intro"></p>
+
+  <fieldset class="homey-form-fieldset">
+    <legend class="homey-form-legend" data-i18n="settings.brokerTitle"></legend>
+
+    <div class="homey-form-group">
+      <label class="homey-form-label" for="mode" data-i18n="settings.broker"></label>
+      <select class="homey-form-select" id="mode">
+        <option value="builtin" data-i18n="settings.builtin"></option>
+        <option value="external" data-i18n="settings.external"></option>
+      </select>
+    </div>
+
+    <div id="builtin-fields">
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="port" data-i18n="settings.port"></label>
+        <input class="homey-form-input" id="port" type="number" min="1024" max="65535" step="1">
+        <p class="glow-note" data-i18n="settings.portHint"></p>
+      </div>
+      <div class="homey-form-group">
+        <label class="homey-form-checkbox">
+          <input class="homey-form-checkbox-input" id="authEnabled" type="checkbox">
+          <span class="homey-form-checkbox-checkmark"></span>
+          <span class="homey-form-checkbox-text" data-i18n="settings.requireAuth"></span>
+        </label>
+        <p class="glow-note" data-i18n="settings.requireAuthHint"></p>
+      </div>
+      <div id="auth-fields">
+        <div class="homey-form-group">
+          <label class="homey-form-label" for="username" data-i18n="settings.username"></label>
+          <input class="homey-form-input" id="username" type="text" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="homey-form-group">
+          <label class="homey-form-label" for="password" data-i18n="settings.password"></label>
+          <div class="glow-row">
+            <input class="homey-form-input" id="password" type="password" autocomplete="off" spellcheck="false">
+            <button class="homey-button-secondary-small" id="reveal" type="button" data-i18n="settings.show"></button>
+          </div>
+        </div>
+        <button class="homey-button-secondary-small" id="regenerate" type="button" data-i18n="settings.regenerate"></button>
+      </div>
+    </div>
+
+    <div id="external-fields">
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="externalHost" data-i18n="settings.host"></label>
+        <input class="homey-form-input" id="externalHost" type="text" autocomplete="off" spellcheck="false">
+        <p class="glow-note" data-i18n="settings.hostHint"></p>
+      </div>
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="externalPort" data-i18n="settings.port"></label>
+        <input class="homey-form-input" id="externalPort" type="number" min="1" max="65535" step="1">
+        <p class="glow-note" data-i18n="settings.externalPortHint"></p>
+      </div>
+      <div class="homey-form-group">
+        <label class="homey-form-checkbox">
+          <input class="homey-form-checkbox-input" id="externalTls" type="checkbox">
+          <span class="homey-form-checkbox-checkmark"></span>
+          <span class="homey-form-checkbox-text" data-i18n="settings.tls"></span>
+        </label>
+      </div>
+      <div class="homey-form-group" id="self-signed-group">
+        <label class="homey-form-checkbox">
+          <input class="homey-form-checkbox-input" id="externalAllowSelfSigned" type="checkbox">
+          <span class="homey-form-checkbox-checkmark"></span>
+          <span class="homey-form-checkbox-text" data-i18n="settings.allowSelfSigned"></span>
+        </label>
+      </div>
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="externalUsername" data-i18n="settings.username"></label>
+        <input class="homey-form-input" id="externalUsername" type="text" autocomplete="off" spellcheck="false" data-i18n-placeholder="settings.optional">
+      </div>
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="externalPassword" data-i18n="settings.password"></label>
+        <input class="homey-form-input" id="externalPassword" type="password" autocomplete="off" spellcheck="false" data-i18n-placeholder="settings.optional">
+      </div>
+    </div>
+
+    <div class="homey-form-group">
+      <label class="homey-form-label" for="prefix" data-i18n="settings.prefix"></label>
+      <input class="homey-form-input" id="prefix" type="text" autocomplete="off" spellcheck="false">
+      <p class="glow-note" data-i18n="settings.prefixHint"></p>
+    </div>
+
+    <button class="homey-button-primary-full" id="save" type="button" data-i18n="settings.save"></button>
+    <p class="glow-message" id="save-message"></p>
+  </fieldset>
+
+  <div class="glow-box" id="connection-box">
+    <strong data-i18n="settings.connectionTitle"></strong>
+    <p class="glow-note" data-i18n="settings.connectionSteps"></p>
+    <dl id="connection-details"></dl>
+    <p class="glow-note" data-i18n="settings.fixedAddressNote"></p>
+  </div>
+
+  <fieldset class="homey-form-fieldset">
+    <legend class="homey-form-legend" data-i18n="settings.statusTitle"></legend>
+    <p><span class="glow-state" id="state"></span></p>
+    <p class="glow-error" id="state-error"></p>
+    <div id="start-stop">
+      <p class="glow-note" data-i18n="settings.startNowHint"></p>
+      <div class="glow-buttons">
+        <button class="homey-button-secondary-small" id="start" type="button" data-i18n="settings.startNow"></button>
+        <button class="homey-button-secondary-small" id="stop" type="button" data-i18n="settings.stop"></button>
+      </div>
+    </div>
+    <dl class="glow-box" id="transport"></dl>
+    <p class="glow-note" id="ignored"></p>
+    <div id="units"></div>
+  </fieldset>
+
+  <fieldset class="homey-form-fieldset">
+    <legend class="homey-form-legend" data-i18n="settings.debugTitle"></legend>
+    <p class="glow-note" data-i18n="settings.debugHint"></p>
+    <button class="homey-button-secondary-small" id="copy" type="button" data-i18n="settings.copy"></button>
+    <ul class="glow-log" id="debug-log"></ul>
+  </fieldset>
+
+  <script type="text/javascript">
+    'use strict';
+
+    const POLL_MS = 2000;
+    const DEFAULTS = {
+      mode: 'builtin',
+      port: 1884,
+      authEnabled: false,
+      username: '',
+      password: '',
+      externalHost: '',
+      externalPort: 1883,
+      externalTls: false,
+      externalAllowSelfSigned: false,
+      externalUsername: '',
+      externalPassword: '',
+      prefix: 'glow',
+    };
+
+    const $ = (id) => document.getElementById(id);
+    let homey;
+    let saved = { ...DEFAULTS };
+    let lastStatus = null;
+    let lastLog = [];
+
+    function t(key, tokens) {
+      return homey.__(key, tokens) || key;
+    }
+
+    // Builds an element with text content only: payloads come from the network,
+    // so nothing is ever inserted as HTML.
+    function el(tag, text, className) {
+      const node = document.createElement(tag);
+      if (text !== undefined && text !== null) node.textContent = String(text);
+      if (className) node.className = className;
+      return node;
+    }
+
+    function addPair(dl, label, value) {
+      dl.appendChild(el('dt', label));
+      dl.appendChild(el('dd', value));
+    }
+
+    function formatTime(ms) {
+      return ms ? new Date(ms).toLocaleString() : t('settings.never');
+    }
+
+    function randomString(length, alphabet) {
+      const bytes = new Uint8Array(length);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+    }
+
+    function generateCredentials() {
+      $('username').value = `glow-${randomString(4, '0123456789abcdef')}`;
+      $('password').value = randomString(20, 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789');
+    }
+
+    function translatePage() {
+      document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => { node.placeholder = t(node.dataset.i18nPlaceholder); });
+    }
+
+    function fillForm(settings) {
+      $('mode').value = settings.mode;
+      $('port').value = settings.port;
+      $('authEnabled').checked = settings.authEnabled;
+      $('username').value = settings.username;
+      $('password').value = settings.password;
+      $('externalHost').value = settings.externalHost;
+      $('externalPort').value = settings.externalPort;
+      $('externalTls').checked = settings.externalTls;
+      $('externalAllowSelfSigned').checked = settings.externalAllowSelfSigned;
+      $('externalUsername').value = settings.externalUsername;
+      $('externalPassword').value = settings.externalPassword;
+      $('prefix').value = settings.prefix;
+      updateVisibility();
+    }
+
+    function readForm() {
+      return {
+        mode: $('mode').value,
+        port: Number($('port').value),
+        authEnabled: $('authEnabled').checked,
+        username: $('username').value.trim(),
+        password: $('password').value,
+        externalHost: $('externalHost').value.trim(),
+        externalPort: Number($('externalPort').value),
+        externalTls: $('externalTls').checked,
+        externalAllowSelfSigned: $('externalAllowSelfSigned').checked,
+        externalUsername: $('externalUsername').value.trim(),
+        externalPassword: $('externalPassword').value,
+        prefix: $('prefix').value.trim().replace(/[#\s]/g, '').replace(/\/+$/, '') || 'glow',
+      };
+    }
+
+    function validate(settings) {
+      const isPort = (value, min) => Number.isInteger(value) && value >= min && value <= 65535;
+      if (settings.mode === 'builtin') {
+        if (!isPort(settings.port, 1024)) return t('settings.invalid.port');
+        if (settings.authEnabled && (!settings.username || !settings.password)) return t('settings.invalid.credentials');
+      } else {
+        if (!settings.externalHost) return t('settings.invalid.host');
+        if (!isPort(settings.externalPort, 1)) return t('settings.invalid.externalPort');
+      }
+      return null;
+    }
+
+    function updateVisibility() {
+      const builtin = $('mode').value === 'builtin';
+      $('builtin-fields').classList.toggle('glow-hidden', !builtin);
+      $('external-fields').classList.toggle('glow-hidden', builtin);
+      $('auth-fields').classList.toggle('glow-hidden', !$('authEnabled').checked);
+      $('self-signed-group').classList.toggle('glow-hidden', !$('externalTls').checked);
+      renderConnectionBox();
+    }
+
+    function showSaveMessage(text, isError) {
+      $('save-message').textContent = text || '';
+      $('save-message').className = `glow-message${isError ? ' error' : ''}`;
+    }
+
+    function save() {
+      const settings = readForm();
+      const problem = validate(settings);
+      if (problem) {
+        showSaveMessage(problem, true);
+        return;
+      }
+      homey.set('mqtt', settings, (error) => {
+        if (error) {
+          showSaveMessage(error.message || String(error), true);
+          return;
+        }
+        saved = settings;
+        fillForm(saved);
+        showSaveMessage(t('settings.saved'));
+      });
+    }
+
+    // Shows the saved settings, which are what the broker is actually using.
+    function renderConnectionBox() {
+      const box = $('connection-box');
+      box.classList.toggle('glow-hidden', saved.mode !== 'builtin');
+      const dl = $('connection-details');
+      dl.replaceChildren();
+      addPair(dl, t('settings.address'), (lastStatus && lastStatus.address) || t('settings.addressUnknown'));
+      addPair(dl, t('settings.port'), saved.port);
+      addPair(dl, t('settings.prefix'), saved.prefix);
+      if (saved.authEnabled) {
+        addPair(dl, t('settings.username'), saved.username);
+        addPair(dl, t('settings.password'), saved.password);
+      }
+    }
+
+    function renderStatus(status) {
+      lastStatus = status;
+      const state = $('state');
+      state.textContent = t(`settings.state.${status.state}`);
+      state.className = `glow-state ${status.state}`;
+      $('state-error').textContent = status.error ? status.error.message : '';
+
+      $('start-stop').classList.toggle('glow-hidden', status.localDevices > 0);
+      const active = status.state !== 'stopped';
+      $('start').classList.toggle('glow-hidden', active && status.state !== 'error');
+      $('stop').classList.toggle('glow-hidden', !active);
+
+      const transport = $('transport');
+      transport.replaceChildren();
+      const info = status.transport;
+      transport.classList.toggle('glow-hidden', !info);
+      if (info && status.mode === 'builtin') {
+        addPair(transport, t('settings.port'), info.listening ? t('settings.listeningOn', { port: info.port }) : '—');
+        addPair(transport, t('settings.clients'), info.clients);
+      } else if (info) {
+        addPair(transport, t('settings.externalBroker'), `${info.host}:${info.port}`);
+        addPair(transport, t('settings.connection'), info.connected ? t('settings.connected') : t('settings.notConnected'));
+        if (info.lastError) addPair(transport, t('settings.lastError'), info.lastError);
+      }
+
+      $('ignored').textContent = status.ignoredMessages ? t('settings.ignoredMessages', { count: status.ignoredMessages }) : '';
+      renderUnits(status.units || [], active);
+      renderConnectionBox();
+    }
+
+    function renderUnits(units, active) {
+      const container = $('units');
+      container.replaceChildren();
+      if (!units.length) {
+        if (active) container.appendChild(el('p', t('settings.noUnits'), 'glow-note'));
+        return;
+      }
+      for (const unit of units) {
+        const box = el('div', null, 'glow-box glow-unit');
+        box.appendChild(el('h3', `${t('settings.unit')} ${unit.unitId}`));
+
+        const dl = el('dl');
+        addPair(dl, t('settings.hardware'), unit.info.hardware || '—');
+        addPair(dl, t('settings.software'), unit.info.software || '—');
+        addPair(dl, t('settings.displayLink'), unit.han.status || '—');
+        addPair(dl, t('settings.signalStrength'), unit.han.rssi !== undefined ? `${unit.han.rssi} dBm` : '—');
+        addPair(dl, t('settings.linkQuality'), unit.han.lqi !== undefined ? unit.han.lqi : '—');
+        const devices = unit.devices && unit.devices.length ? unit.devices.map((d) => d.name).join(', ') : t('settings.none');
+        addPair(dl, t('settings.pairedDevices'), devices);
+        box.appendChild(dl);
+
+        const table = el('table');
+        const head = el('tr');
+        [t('settings.topic'), t('settings.lastMessage'), t('settings.messages'), t('settings.rejections')].forEach((h) => head.appendChild(el('th', h)));
+        table.appendChild(head);
+        for (const [kind, stats] of Object.entries(unit.topics)) {
+          const row = el('tr');
+          const reasons = Object.entries(unit.rejections[kind] || {}).map(([reason, n]) => `${reason}: ${n}`).join(', ');
+          [kind, formatTime(stats.lastAt), stats.count, reasons || t('settings.none')].forEach((v) => row.appendChild(el('td', v)));
+          table.appendChild(row);
+        }
+        box.appendChild(table);
+        container.appendChild(box);
+      }
+    }
+
+    function renderLog(entries) {
+      lastLog = entries;
+      const list = $('debug-log');
+      list.replaceChildren();
+      if (!entries.length) {
+        list.appendChild(el('li', t('settings.debugEmpty'), 'glow-note'));
+        return;
+      }
+      for (const entry of entries) {
+        const item = el('li');
+        item.appendChild(el('div', `${new Date(entry.time).toLocaleTimeString()}  ${entry.topic}`, 'meta'));
+        if (entry.rejections.length) item.appendChild(el('div', entry.rejections.join('; '), 'glow-error'));
+        item.appendChild(el('pre', entry.payload));
+        list.appendChild(item);
+      }
+    }
+
+    function logAsText() {
+      return lastLog.map((entry) => {
+        const rejections = entry.rejections.length ? `  [${entry.rejections.join('; ')}]` : '';
+        return `${new Date(entry.time).toISOString()} ${entry.topic}${rejections}\n${entry.payload}`;
+      }).join('\n\n');
+    }
+
+    async function copyLog() {
+      const text = logAsText();
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        const area = el('textarea', text);
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
+      $('copy').textContent = t('settings.copied');
+      setTimeout(() => { $('copy').textContent = t('settings.copy'); }, 1500);
+    }
+
+    function api(method, path) {
+      return new Promise((resolve, reject) => {
+        homey.api(method, path, null, (error, result) => (error ? reject(error) : resolve(result)));
+      });
+    }
+
+    async function poll() {
+      try {
+        const [status, log] = await Promise.all([api('GET', '/status'), api('GET', '/debug-log')]);
+        renderStatus(status);
+        renderLog(log);
+      } catch (error) {
+        $('state-error').textContent = error.message || String(error);
+      }
+    }
+
+    async function startOrStop(path) {
+      try {
+        renderStatus(await api('POST', path));
+      } catch (error) {
+        $('state-error').textContent = error.message || String(error);
+      }
+    }
+
+    function onHomeyReady(Homey) {
+      homey = Homey;
+      translatePage();
+
+      $('mode').addEventListener('change', updateVisibility);
+      $('externalTls').addEventListener('change', updateVisibility);
+      $('authEnabled').addEventListener('change', () => {
+        if ($('authEnabled').checked && !$('username').value && !$('password').value) generateCredentials();
+        updateVisibility();
+      });
+      $('regenerate').addEventListener('click', generateCredentials);
+      $('reveal').addEventListener('click', () => {
+        const hidden = $('password').type === 'password';
+        $('password').type = hidden ? 'text' : 'password';
+        $('reveal').textContent = t(hidden ? 'settings.hide' : 'settings.show');
+      });
+      $('save').addEventListener('click', save);
+      $('start').addEventListener('click', () => startOrStop('/start'));
+      $('stop').addEventListener('click', () => startOrStop('/stop'));
+      $('copy').addEventListener('click', copyLog);
+
+      homey.get('mqtt', (error, stored) => {
+        saved = { ...DEFAULTS, ...(stored || {}) };
+        fillForm(saved);
+        Homey.ready();
+        poll();
+        setInterval(poll, POLL_MS);
+      });
+    }
+  </script>
+</body>
+</html>

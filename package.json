@@ -2,13 +2,17 @@
   "name": "com.glowmarkt.api",
   "version": "1.0.0",
   "main": "app.js",
-  "scripts": {},
+  "scripts": {
+    "test": "node --test --test-timeout=10000 'test/**/*.test.js'"
+  },
   "devDependencies": {
     "@tsconfig/node12": "^1.0.11",
     "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.1",
     "@types/node": "^18.11.9"
   },
   "dependencies": {
+    "aedes": "1.2.0",
+    "mqtt": "5.16.0",
     "node-fetch": "^2.6.7"
   }
 }

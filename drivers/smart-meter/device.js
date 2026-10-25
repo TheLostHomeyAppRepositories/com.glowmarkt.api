@@ -1,8 +1,12 @@
 'use strict';
 
 const { Device } = require('homey');
-const fetch = require('node-fetch');
-const BRIGHT_APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
+const { apiGet, tokenExpiry } = require('../../lib/cloud/glowmarkt');
+
+// renew the token when less than this much of its life remains
+const TOKEN_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
+// how long to wait before trying again when access is refused even after a fresh login
+const ACCESS_REFUSED_RETRY_MS = 60 * 60 * 1000;
 
 class GlowmarktUKSmartMeter_device extends Device {
 
@@ -21,52 +25,24 @@ class GlowmarktUKSmartMeter_device extends Device {
     // Set device unavailable until first successful poll
     this.setUnavailable().catch(this.error);
 
-    const fetchCurrentPower = (token) => fetch(`https://api.glowmarkt.com/api/v0-1/resource/${elec_cons_res}/current`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'token': token, 'applicationId': BRIGHT_APP_ID }
-    }).then(r => r.json());
-
-    const fetchMeterReading = (token) => fetch(`https://api.glowmarkt.com/api/v0-1/resource/${elec_cons_res}/meterread`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'token': token, 'applicationId': BRIGHT_APP_ID }
-    }).then(r => r.json());
-
-    const fetchTariff = (token) => fetch(`https://api.glowmarkt.com/api/v0-1/resource/${elec_cons_res}/tariff`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'token': token, 'applicationId': BRIGHT_APP_ID }
-    }).then(r => r.json());
-
     const updateDevice = async () => {
+      if (this.isAccessRefused()) return;
       try {
-        let token = this.getStoreValue('token');
-
-        let powerRes = await fetchCurrentPower(token);
-        if (powerRes.error) {
-          this.log('Power API returned error, attempting token refresh');
-          token = await this.refreshToken();
-          if (!token) throw new Error('Token refresh failed');
-          powerRes = await fetchCurrentPower(token);
-          if (powerRes.error) throw new Error(`Power API error after token refresh: ${JSON.stringify(powerRes.error)}`);
-        }
+        const powerRes = await this.request(`/resource/${elec_cons_res}/current`);
         if (!powerRes.data?.[0]) throw new Error(`Power API returned no data: ${JSON.stringify(powerRes)}`);
+        this.accessRefusedUntil = null;
         if (!this.getAvailable()) this.setAvailable().catch(this.error);
         this.setCapabilityValue('measure_power', powerRes.data[0][1]).catch(this.error);
 
-        let energyRes = await fetchMeterReading(token);
-        if (energyRes.error) {
-          this.log('Meter read API returned error, attempting token refresh');
-          token = await this.refreshToken();
-          if (!token) throw new Error('Token refresh failed');
-          energyRes = await fetchMeterReading(token);
-          if (energyRes.error) throw new Error(`Meter read API error after token refresh: ${JSON.stringify(energyRes.error)}`);
-        }
+        const energyRes = await this.request(`/resource/${elec_cons_res}/meterread`);
         if (!energyRes.data?.[0]) throw new Error(`Meter read API returned no data: ${JSON.stringify(energyRes)}`);
         if (!this.getAvailable()) this.setAvailable().catch(this.error);
         const kWh = energyRes.data[0][1] / 1000;
         this.setCapabilityValue('meter_power.imported', kWh).catch(this.error);
       } catch (error) {
-        this.error('updateDevice failed:', error);
-        if (this.getAvailable()) {
+        this.error('updateDevice failed:', error.message);
+        // an access refusal has already set the device unavailable with its own message
+        if (!error.accessRefused && this.getAvailable()) {
           this.log('Device set as unavailable');
           this.setUnavailable().catch(this.error);
         }
@@ -76,19 +52,19 @@ class GlowmarktUKSmartMeter_device extends Device {
     // updateTariff does not control device availability — a missing/failed tariff
     // should not mark the device unavailable if the power API is working.
     const updateTariff = async () => {
+      if (this.isAccessRefused()) return;
       try {
-        let token = this.getStoreValue('token');
-        let resource = await fetchTariff(token);
-        if (resource.error) {
-          this.log('Tariff API returned error, attempting token refresh');
-          token = await this.refreshToken();
-          if (!token) throw new Error('Token refresh failed');
-          resource = await fetchTariff(token);
-          if (resource.error) throw new Error(`Tariff API error after token refresh: ${JSON.stringify(resource.error)}`);
+        const resource = await this.request(`/resource/${elec_cons_res}/tariff`);
+        const tariff = Number(resource.data[0].currentRates.rate);
+        if (!Number.isFinite(tariff)) throw new Error(`Tariff API returned no rate: ${JSON.stringify(resource.data[0])}`);
+        const previous = this.getCapabilityValue('tariff');
+        await this.setCapabilityValue('tariff', tariff);
+        if (previous !== null && previous !== tariff) {
+          this.log(`Tariff changed from ${previous} to ${tariff}`);
+          this.driver.tariffChangedTrigger.trigger(this, { tariff }).catch(this.error);
         }
-        this.setCapabilityValue('tariff', Number(resource.data[0].currentRates.rate)).catch(this.error);
       } catch (error) {
-        this.error('updateTariff failed:', error);
+        this.error('updateTariff failed:', error.message);
       }
     };
 
@@ -117,33 +93,67 @@ class GlowmarktUKSmartMeter_device extends Device {
   }
 
   /**
+   * GETs an API path and returns the response body. Renews the token when it's
+   * close to expiry, and logs in again once on a 401 or error response. If it's
+   * still a 401 after a fresh login, marks the device unavailable and stops
+   * trying for an hour.
+   */
+  async request(path) {
+    let token = await this.currentToken();
+    let res = await apiGet(path, token);
+    if (res.authFailed) {
+      this.log(`${path} returned HTTP ${res.status}, logging in again`);
+      token = await this.refreshToken();
+      if (!token) throw new Error('Token refresh failed');
+      res = await apiGet(path, token);
+      if (res.status === 401) {
+        this.refuseAccess(res);
+        const error = new Error(`Access refused after token refresh: HTTP ${res.status} ${JSON.stringify(res.body)}`);
+        error.accessRefused = true;
+        throw error;
+      }
+    }
+    if (!res.ok) throw new Error(`API error: HTTP ${res.status} ${JSON.stringify(res.body)}`);
+    return res.body;
+  }
+
+  /**
+   * Returns the stored token, renewing it first if it expires within a day.
+   */
+  async currentToken() {
+    const token = this.getStoreValue('token');
+    const expiry = tokenExpiry(token);
+    if (expiry !== null && expiry - Date.now() < TOKEN_RENEW_BEFORE_MS) {
+      this.log('Token expires within a day, renewing');
+      return (await this.refreshToken()) || token;
+    }
+    return token;
+  }
+
+  /**
    * Refreshes the API token using stored credentials. Returns the new token or null on failure.
-   * Concurrent calls are coalesced — only one refresh runs at a time.
+   * Concurrent calls share one login through the driver, across every device on the account.
    */
   async refreshToken() {
-    if (this.refreshingToken) return null;
-    this.refreshingToken = true;
-    try {
-      const settings = this.getSettings();
-      const authResponse = await fetch('https://api.glowmarkt.com/api/v0-1/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'applicationId': BRIGHT_APP_ID },
-        body: JSON.stringify({ username: settings.username, password: settings.password })
-      });
-      const authJSON = await authResponse.json();
-      if (authJSON.valid) {
-        await this.setStoreValue('token', authJSON.token);
-        this.log('Token refreshed successfully');
-        return authJSON.token;
-      }
-      this.error('Token refresh failed: credentials rejected by API');
+    const settings = this.getSettings();
+    const token = await this.driver.login(settings.username, settings.password);
+    if (!token) {
+      this.error('Token refresh failed');
       return null;
-    } catch (error) {
-      this.error('Token refresh failed:', error);
-      return null;
-    } finally {
-      this.refreshingToken = false;
     }
+    await this.setStoreValue('token', token);
+    this.log('Token refreshed successfully');
+    return token;
+  }
+
+  isAccessRefused() {
+    return Boolean(this.accessRefusedUntil && Date.now() < this.accessRefusedUntil);
+  }
+
+  refuseAccess(res) {
+    this.accessRefusedUntil = Date.now() + ACCESS_REFUSED_RETRY_MS;
+    this.error(`Access refused after a fresh login (HTTP ${res.status}); retrying in an hour`);
+    this.setUnavailable(this.homey.__('cloud.accessRefused')).catch(this.error);
   }
 
   /**
@@ -167,13 +177,9 @@ class GlowmarktUKSmartMeter_device extends Device {
     // if username or password changed, get new token from API and write it to token in device store
     if (changedKeys.includes('username') || changedKeys.includes('password')) {
       this.log('Credentials changed - getting new token from API');
-      const authResponse = await fetch('https://api.glowmarkt.com/api/v0-1/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'applicationId': BRIGHT_APP_ID },
-        body: JSON.stringify({ username: newSettings.username, password: newSettings.password })
-      });
-      const authJSON = await authResponse.json();
-      await this.setStoreValue('token', authJSON.valid ? authJSON.token : 'VOID');
+      const token = await this.driver.login(newSettings.username, newSettings.password);
+      await this.setStoreValue('token', token || 'VOID');
+      this.accessRefusedUntil = null;
     }
 
     // if poll frequency changed, update variable

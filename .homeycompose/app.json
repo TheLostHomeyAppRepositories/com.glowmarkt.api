@@ -1,7 +1,7 @@
 {
   "id": "com.glowmarkt.api",
   "version": "1.1.7",
-  "compatibility": ">=5.0.0",
+  "compatibility": ">=12.9.0",
   "sdk": 3,
   "platforms": [
     "local"
@@ -38,5 +38,23 @@
       "power"
     ]
   },
-  "homeyCommunityTopicId": 81210
+  "homeyCommunityTopicId": 81210,
+  "api": {
+    "getStatus": {
+      "method": "GET",
+      "path": "/status"
+    },
+    "start": {
+      "method": "POST",
+      "path": "/start"
+    },
+    "stop": {
+      "method": "POST",
+      "path": "/stop"
+    },
+    "getDebugLog": {
+      "method": "GET",
+      "path": "/debug-log"
+    }
+  }
 }

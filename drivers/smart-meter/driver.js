@@ -1,9 +1,7 @@
 'use strict';
 
 const { Driver } = require('homey');
-const fetch = require('node-fetch');
-  // app ID for Bright app - used in API calls to Glowmarkt API
-  const BRIGHT_APP_ID = 'b0f1b774-a586-4f72-9edd-27ead8aa7a8d';
+const { authenticate, apiGet } = require('../../lib/cloud/glowmarkt');
 
 class GlowmarktUKSmartMeter_driver extends Driver {
 
@@ -12,6 +10,25 @@ class GlowmarktUKSmartMeter_driver extends Driver {
    */
   async onInit() {
     this.log('Glowmarkt UK Smart Meter driver has been initialized');
+    this.tariffChangedTrigger = this.homey.flow.getDeviceTriggerCard('tariff_changed');
+    this.logins = new Map();
+  }
+
+  /**
+   * Logs in, sharing one request between every device and poll that asks for
+   * the same account at the same time. Returns the new token, or null on failure.
+   */
+  login(username, password) {
+    if (!this.logins.has(username)) {
+      const attempt = authenticate(username, password)
+        .catch((error) => {
+          this.error('Login failed:', error);
+          return null;
+        })
+        .finally(() => this.logins.delete(username));
+      this.logins.set(username, attempt);
+    }
+    return this.logins.get(username);
   }
 
   async onPair(session) {
@@ -23,74 +40,71 @@ class GlowmarktUKSmartMeter_driver extends Driver {
       username = data.username;
       password = data.password;
 
-      // create an auth object for the API call
-      const auth = {
-        'username': username,
-        'password': password
-      };
-
-      // get new auth token from API and store in device store
-      let authResponse = await fetch('https://api.glowmarkt.com/api/v0-1/auth',{
-        method: 'POST', 
-        headers: {
-          'Content-Type': 'application/json',
-          'applicationId': BRIGHT_APP_ID
-        },
-        body: JSON.stringify(auth)
-      });
-      let authJSON = await authResponse.json();
-      let authValid = authJSON.valid;
-      this.log('Login credentials valid: ' + authValid);
-
-      if (typeof authValid == 'boolean') {
-        if (authValid) { 
-          token = authJSON.token; 
-        }
-        return authValid;
-      } else {
-        this.log('Login credentials response from API did not contain a boolean in the property "valid"');
-        return false;
-      }
+      // get new auth token from API
+      token = await authenticate(username, password);
+      this.log('Login credentials valid: ' + Boolean(token));
+      return Boolean(token);
     });
 
     session.setHandler("list_devices", async () => {
       // get list of resources from API
-      let veidResponse = await fetch('https://api.glowmarkt.com/api/v0-1/virtualentity', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'applicationId': BRIGHT_APP_ID,
-          'token': token
-        }
-      });
-      let virtualEntities = await veidResponse.json();
-
-      // map these to an array of devices for pairing
-      let devices = virtualEntities.map(veToDevice);
-      this.log('Virtual Entities: ' + devices.length);
-
-      function veToDevice(virtualEntity) {
-        // find a resource object in the resources array whose name property is 'electricity consumption'
-        let resources = virtualEntity.resources;
-        function isElecCons(resource) {
-          return resource.name === 'electricity consumption';
-        }
-        let elec_cons_res = resources.find(isElecCons);
-        // if no such resource found, just return the first resource and hope that's right
-        let elec_cons_res_id = virtualEntity.resources[0].resourceId;
-        if (elec_cons_res) {
-          elec_cons_res_id = elec_cons_res.resourceId;
-        } 
-        // create store object
-        let deviceStore = {elec_cons_res: elec_cons_res_id, token: token};
-
-        // return a homey device object
-        return {name:`${virtualEntity.name} for ${virtualEntity.postalCode}`, data: {id:virtualEntity.veId}, settings: {username, password}, store: deviceStore};
+      const veidResponse = await apiGet('/virtualentity', token);
+      if (!veidResponse.ok || !Array.isArray(veidResponse.body)) {
+        throw new Error(`Could not list virtual entities (HTTP ${veidResponse.status})`);
       }
+      const virtualEntities = veidResponse.body;
+
+      // map the ones whose resources work to an array of devices for pairing
+      const devices = [];
+      for (const virtualEntity of virtualEntities) {
+        try {
+          const device = await this.veToDevice(virtualEntity, token, { username, password });
+          if (device) devices.push(device);
+        } catch (error) {
+          this.log(`Skipping virtual entity ${virtualEntity.name}: ${error.message}`);
+        }
+      }
+      this.log(`Virtual Entities: ${virtualEntities.length}, usable: ${devices.length}`);
 
       // finally, return the array of devices available to pair
       return devices;
     });
+  }
+
+  /**
+   * Returns a pairing entry for a virtual entity, or null if its resources fail,
+   * are empty, or can't be read (a stale entity lists its resources normally
+   * but returns HTTP 401 on /current).
+   */
+  async veToDevice(virtualEntity, token, settings) {
+    const resourcesResponse = await apiGet(`/virtualentity/${virtualEntity.veId}/resources`, token);
+    const resources = resourcesResponse.ok ? resourcesResponse.body.resources : null;
+    if (!Array.isArray(resources) || resources.length === 0) {
+      this.log(`Skipping virtual entity ${virtualEntity.name}: resources failed or empty (HTTP ${resourcesResponse.status})`);
+      return null;
+    }
+
+    // find a resource object in the resources array whose name property is 'electricity consumption'
+    // if no such resource found, just use the first resource and hope that's right
+    const elec_cons_res = resources.find((resource) => resource.name === 'electricity consumption') || resources[0];
+
+    // check the resource can actually be read
+    const current = await apiGet(`/resource/${elec_cons_res.resourceId}/current`, token);
+    if (!current.ok) {
+      this.log(`Skipping virtual entity ${virtualEntity.name}: its resource returned HTTP ${current.status}`);
+      return null;
+    }
+
+    // create store object
+    const deviceStore = { elec_cons_res: elec_cons_res.resourceId, token: token };
+
+    // return a homey device object
+    return {
+      name: `${virtualEntity.name} for ${virtualEntity.postalCode}`,
+      data: { id: virtualEntity.veId },
+      settings,
+      store: deviceStore
+    };
   }
 
 }
