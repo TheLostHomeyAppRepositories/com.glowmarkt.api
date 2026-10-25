@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const UnitRegistry = require('../../lib/glow/UnitRegistry');
-const { mask, maskPayload } = require('../../lib/glow/mask');
+const { mask, maskPayload, maskPostcodes } = require('../../lib/glow/mask');
 const {
   STATE, ELECTRICITY, GAS, clone,
 } = require('./examples');
@@ -22,6 +22,13 @@ test('mask keeps the last four characters and leaves placeholders alone', () => 
   assert.equal(mask('---'), '---');
   assert.equal(mask('12'), '12');
   assert.equal(mask(undefined), undefined);
+});
+
+test('maskPostcodes masks UK postcodes in names', () => {
+  assert.equal(maskPostcodes('Smart Meter for YO10 3DD'), 'Smart Meter for ••••');
+  assert.equal(maskPostcodes('Flat for SW1A1AA and EC1A 1BB'), 'Flat for •••• and ••••');
+  assert.equal(maskPostcodes('Kitchen meter'), 'Kitchen meter');
+  assert.equal(maskPostcodes(undefined), '');
 });
 
 test('maskPayload masks identifiers in valid and invalid JSON', () => {

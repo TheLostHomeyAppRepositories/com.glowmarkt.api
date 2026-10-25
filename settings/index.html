@@ -26,6 +26,8 @@
     .glow-log .meta { opacity: 0.7; }
     .glow-log pre { white-space: pre-wrap; word-break: break-all; margin: 4px 0 0; font-family: ui-monospace, Menlo, monospace; }
     .glow-buttons { display: flex; gap: 8px; margin-top: 12px; }
+    .glow-subheading { font-size: 1.05em; margin: 20px 0 4px; }
+    .glow-skipped { margin: 6px 0 0; padding-left: 18px; font-size: 0.9em; }
   </style>
 </head>
 <body>
@@ -139,6 +141,9 @@
     <dl class="glow-box" id="transport"></dl>
     <p class="glow-note" id="ignored"></p>
     <div id="units"></div>
+
+    <h2 class="glow-subheading" data-i18n="settings.cloudTitle"></h2>
+    <div id="cloud"></div>
   </fieldset>
 
   <fieldset class="homey-form-fieldset">
@@ -330,7 +335,54 @@
 
       $('ignored').textContent = status.ignoredMessages ? t('settings.ignoredMessages', { count: status.ignoredMessages }) : '';
       renderUnits(status.units || [], active);
+      renderCloud(status.cloud || []);
       renderConnectionBox();
+    }
+
+    function renderCloud(accounts) {
+      const container = $('cloud');
+      container.replaceChildren();
+      if (!accounts.length) {
+        container.appendChild(el('p', t('settings.cloudNone'), 'glow-note'));
+        return;
+      }
+      for (const account of accounts) {
+        const box = el('div', null, 'glow-box glow-unit');
+        box.appendChild(el('h3', t('settings.account', { number: account.number })));
+
+        const dl = el('dl');
+        addPair(dl, t('settings.tokenRenews'), account.tokenRenewsAt ? formatTime(account.tokenRenewsAt) : t('settings.unknown'));
+        box.appendChild(dl);
+
+        if (account.devices.length) {
+          const table = el('table');
+          const head = el('tr');
+          [t('settings.device'), t('settings.lastSuccessfulPoll'), t('settings.lastError'), t('settings.cloudStatus')].forEach((h) => head.appendChild(el('th', h)));
+          table.appendChild(head);
+          for (const device of account.devices) {
+            const error = device.lastError
+              ? `${formatTime(device.lastError.at)} · ${t(`settings.poll.${device.lastError.poll}`)}: ${device.lastError.message}`
+              : t('settings.none');
+            let state = device.available ? t('settings.cloudOk') : t('settings.cloudUnavailable');
+            if (device.accessRefusedUntil) state = t('settings.cloudRefused', { time: formatTime(device.accessRefusedUntil) });
+            const row = el('tr');
+            [device.name, formatTime(device.lastSuccessAt), error, state].forEach((v) => row.appendChild(el('td', v)));
+            table.appendChild(row);
+          }
+          box.appendChild(table);
+        }
+
+        if (account.skipped.length) {
+          box.appendChild(el('p', t('settings.skippedEntries'), 'glow-note'));
+          const list = el('ul', null, 'glow-skipped');
+          for (const entry of account.skipped) {
+            const reason = t(`settings.skipReason.${entry.reason.code}`, { status: entry.reason.status, message: entry.reason.message });
+            list.appendChild(el('li', `${entry.name}: ${reason} (${formatTime(entry.at)})`));
+          }
+          box.appendChild(list);
+        }
+        container.appendChild(box);
+      }
     }
 
     function renderUnits(units, active) {

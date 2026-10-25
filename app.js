@@ -193,7 +193,19 @@ class GlowmarktApp extends Homey.App {
       transport: status.transport,
       units,
       ignoredMessages: this.registry ? this.registry.ignored : 0,
+      cloud: this.getCloudStatus(),
     };
+  }
+
+  getCloudStatus() {
+    const driver = this.homey.drivers.getDrivers()['smart-meter'];
+    if (!driver) return [];
+    try {
+      return driver.getCloudStatus();
+    } catch (error) {
+      // The driver isn't ready yet.
+      return [];
+    }
   }
 
   getMqttDebugLog() {

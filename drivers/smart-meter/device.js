@@ -1,7 +1,8 @@
 'use strict';
 
 const { Device } = require('homey');
-const { apiGet, tokenExpiry } = require('../../lib/cloud/glowmarkt');
+const { apiGet, tokenExpiry, summarise, apiError } = require('../../lib/cloud/glowmarkt');
+const { maskPostcodes } = require('../../lib/glow/mask');
 
 // renew the token when less than this much of its life remains
 const TOKEN_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
@@ -22,6 +23,9 @@ class GlowmarktUKSmartMeter_device extends Device {
 
     const elec_cons_res = this.getStoreValue('elec_cons_res');
 
+    // shown in the Cloud section of the app settings page
+    if (!this.cloudStatus) this.cloudStatus = { lastSuccessAt: null, lastError: null };
+
     // Set device unavailable until first successful poll
     this.setUnavailable().catch(this.error);
 
@@ -29,18 +33,20 @@ class GlowmarktUKSmartMeter_device extends Device {
       if (this.isAccessRefused()) return;
       try {
         const powerRes = await this.request(`/resource/${elec_cons_res}/current`);
-        if (!powerRes.data?.[0]) throw new Error(`Power API returned no data: ${JSON.stringify(powerRes)}`);
+        if (!powerRes.data?.[0]) throw apiError('Power API returned no data', JSON.stringify(powerRes));
         this.accessRefusedUntil = null;
         if (!this.getAvailable()) this.setAvailable().catch(this.error);
         this.setCapabilityValue('measure_power', powerRes.data[0][1]).catch(this.error);
 
         const energyRes = await this.request(`/resource/${elec_cons_res}/meterread`);
-        if (!energyRes.data?.[0]) throw new Error(`Meter read API returned no data: ${JSON.stringify(energyRes)}`);
+        if (!energyRes.data?.[0]) throw apiError('Meter read API returned no data', JSON.stringify(energyRes));
         if (!this.getAvailable()) this.setAvailable().catch(this.error);
         const kWh = energyRes.data[0][1] / 1000;
         this.setCapabilityValue('meter_power.imported', kWh).catch(this.error);
+        this.cloudStatus.lastSuccessAt = Date.now();
       } catch (error) {
         this.error('updateDevice failed:', error.message);
+        this.recordError('power', error);
         // an access refusal has already set the device unavailable with its own message
         if (!error.accessRefused && this.getAvailable()) {
           this.log('Device set as unavailable');
@@ -56,7 +62,7 @@ class GlowmarktUKSmartMeter_device extends Device {
       try {
         const resource = await this.request(`/resource/${elec_cons_res}/tariff`);
         const tariff = Number(resource.data[0].currentRates.rate);
-        if (!Number.isFinite(tariff)) throw new Error(`Tariff API returned no rate: ${JSON.stringify(resource.data[0])}`);
+        if (!Number.isFinite(tariff)) throw apiError('Tariff API returned no rate', JSON.stringify(resource.data[0]));
         const previous = this.getCapabilityValue('tariff');
         await this.setCapabilityValue('tariff', tariff);
         if (previous !== null && previous !== tariff) {
@@ -65,6 +71,7 @@ class GlowmarktUKSmartMeter_device extends Device {
         }
       } catch (error) {
         this.error('updateTariff failed:', error.message);
+        this.recordError('tariff', error);
       }
     };
 
@@ -104,16 +111,16 @@ class GlowmarktUKSmartMeter_device extends Device {
     if (res.authFailed) {
       this.log(`${path} returned HTTP ${res.status}, logging in again`);
       token = await this.refreshToken();
-      if (!token) throw new Error('Token refresh failed');
+      if (!token) throw apiError('Token refresh failed');
       res = await apiGet(path, token);
       if (res.status === 401) {
         this.refuseAccess(res);
-        const error = new Error(`Access refused after token refresh: HTTP ${res.status} ${JSON.stringify(res.body)}`);
+        const error = apiError('HTTP 401 after a fresh login', JSON.stringify(res.body));
         error.accessRefused = true;
         throw error;
       }
     }
-    if (!res.ok) throw new Error(`API error: HTTP ${res.status} ${JSON.stringify(res.body)}`);
+    if (!res.ok) throw apiError(`HTTP ${res.status} from /${path.split('/').pop()}`, JSON.stringify(res.body));
     return res.body;
   }
 
@@ -144,6 +151,27 @@ class GlowmarktUKSmartMeter_device extends Device {
     await this.setStoreValue('token', token);
     this.log('Token refreshed successfully');
     return token;
+  }
+
+  recordError(poll, error) {
+    this.cloudStatus.lastError = { at: Date.now(), poll, message: summarise(error) };
+  }
+
+  /**
+   * Status for the Cloud section of the app settings page, with the postcode
+   * masked in the device name.
+   */
+  getCloudStatus() {
+    const expiry = tokenExpiry(this.getStoreValue('token'));
+    const status = this.cloudStatus || {};
+    return {
+      name: maskPostcodes(this.getName()),
+      available: this.getAvailable(),
+      lastSuccessAt: status.lastSuccessAt || null,
+      lastError: status.lastError || null,
+      accessRefusedUntil: this.isAccessRefused() ? this.accessRefusedUntil : null,
+      tokenRenewsAt: expiry === null ? null : expiry - TOKEN_RENEW_BEFORE_MS
+    };
   }
 
   isAccessRefused() {

@@ -5,18 +5,11 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Module = require('module');
 const net = require('net');
-const path = require('path');
 const { EventEmitter } = require('events');
 const mqtt = require('mqtt');
 
-// app.js requires 'homey', which only exists on a Homey.
-const originalResolve = Module._resolveFilename;
-Module._resolveFilename = function resolve(request, ...rest) {
-  return request === 'homey' ? 'homey-stub' : originalResolve.call(this, request, ...rest);
-};
-require.cache['homey-stub'] = { id: 'homey-stub', filename: 'homey-stub', loaded: true, exports: { App: class {} } };
+require('./helpers/homey-stub');
 const GlowmarktApp = require('../app');
 
 const locale = require('../locales/en.json');
@@ -27,7 +20,7 @@ function translate(key, tokens = {}) {
   return text.replace(/__(\w+)__/g, (match, name) => (tokens[name] !== undefined ? tokens[name] : match));
 }
 
-function fakeHomey(stored = {}, devices = []) {
+function fakeHomey(stored = {}, devices = [], cloudDriver = null) {
   const settings = new EventEmitter();
   const values = new Map(Object.entries(stored));
   settings.get = (key) => values.get(key);
@@ -35,9 +28,12 @@ function fakeHomey(stored = {}, devices = []) {
     values.set(key, value);
     settings.emit('set', key);
   };
+  const drivers = {};
+  if (devices.length) drivers.glow_local_gas = { getDevices: () => devices };
+  if (cloudDriver) drivers['smart-meter'] = cloudDriver;
   return {
     settings,
-    drivers: { getDrivers: () => (devices.length ? { glow_local_gas: { getDevices: () => devices } } : {}) },
+    drivers: { getDrivers: () => drivers },
     setInterval,
     clearInterval,
     setTimeout,
@@ -47,9 +43,9 @@ function fakeHomey(stored = {}, devices = []) {
   };
 }
 
-async function makeApp(stored, devices) {
+async function makeApp(stored, devices, cloudDriver) {
   const app = new GlowmarktApp();
-  app.homey = fakeHomey(stored, devices);
+  app.homey = fakeHomey(stored, devices, cloudDriver);
   app.log = () => {};
   app.error = () => {};
   await app.onInit();
@@ -165,5 +161,21 @@ test('a pairing session starts the layer; closing it leaves it running for the i
   assert.equal(await isListening(port), true);
   await app.closePairingSession(session);
   assert.equal(await isListening(port), true);
+  await app.onUninit();
+});
+
+test('status includes the cloud driver status, or an empty list without it', async () => {
+  const port = await freePort();
+  let app = await makeApp({ mqtt: { port } });
+  assert.deepEqual((await app.getMqttStatus()).cloud, []);
+  await app.onUninit();
+
+  const accounts = [{ number: 1, devices: [], skipped: [], tokenRenewsAt: null }];
+  app = await makeApp({ mqtt: { port } }, [], { getCloudStatus: () => accounts });
+  assert.deepEqual((await app.getMqttStatus()).cloud, accounts);
+  await app.onUninit();
+
+  app = await makeApp({ mqtt: { port } }, [], { getCloudStatus: () => { throw new Error('not ready'); } });
+  assert.deepEqual((await app.getMqttStatus()).cloud, []);
   await app.onUninit();
 });
