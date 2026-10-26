@@ -12,13 +12,7 @@ const mqtt = require('mqtt');
 require('./helpers/homey-stub');
 const GlowmarktApp = require('../app');
 
-const locale = require('../locales/en.json');
-
-function translate(key, tokens = {}) {
-  const text = key.split('.').reduce((node, part) => (node ? node[part] : undefined), locale);
-  if (typeof text !== 'string') return key;
-  return text.replace(/__(\w+)__/g, (match, name) => (tokens[name] !== undefined ? tokens[name] : match));
-}
+const { translate } = require('./helpers/locale');
 
 function fakeHomey(stored = {}, devices = [], cloudDriver = null) {
   const settings = new EventEmitter();
@@ -178,4 +172,33 @@ test('status includes the cloud driver status, or an empty list without it', asy
   app = await makeApp({ mqtt: { port } }, [], { getCloudStatus: () => { throw new Error('not ready'); } });
   assert.deepEqual((await app.getMqttStatus()).cloud, []);
   await app.onUninit();
+});
+
+test('messages reach the local device for that unit and kind; STATE reaches both', async (t) => {
+  const port = await freePort();
+  const calls = [];
+  const fake = (unitId, kind) => ({
+    getData: () => ({ unitId, kind }),
+    getName: () => `${unitId} ${kind}`,
+    onGlowArrival: (e) => calls.push(`${unitId} ${kind} arrival ${e.kind}`),
+    onGlowReading: (e) => calls.push(`${unitId} ${kind} reading ${e.kind}`),
+    onGlowState: () => calls.push(`${unitId} ${kind} state`),
+  });
+  const devices = [fake('TEST', 'electricitymeter'), fake('TEST', 'gasmeter'), fake('OTHER', 'electricitymeter')];
+  const app = await makeApp({ mqtt: { port } }, devices);
+  t.after(() => app.onUninit());
+
+  const client = await mqtt.connectAsync({ host: '127.0.0.1', port, reconnectPeriod: 0 });
+  const timestamp = new Date().toISOString();
+  await client.publishAsync('glow/TEST/SENSOR/electricitymeter', JSON.stringify({ electricitymeter: { timestamp, power: { value: 1 } } }));
+  await client.publishAsync('glow/TEST/STATE', JSON.stringify({ timestamp, han: { status: 'joined', rssi: -32, lqi: 255 } }));
+  await client.endAsync();
+  await sleep(100);
+
+  assert.deepEqual(calls.sort(), [
+    'TEST electricitymeter arrival electricitymeter',
+    'TEST electricitymeter reading electricitymeter',
+    'TEST electricitymeter state',
+    'TEST gasmeter state',
+  ]);
 });

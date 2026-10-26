@@ -1,0 +1,18 @@
+{
+  "title": { "en": "Display link status changed" },
+  "hint": { "en": "The display's connection to the smart meter hub. A new status counts only once it has lasted a minute." },
+  "tokens": [
+    {
+      "name": "status",
+      "type": "string",
+      "title": { "en": "Status" },
+      "example": "joined"
+    },
+    {
+      "name": "previous_status",
+      "type": "string",
+      "title": { "en": "Previous status" },
+      "example": "service discovery"
+    }
+  ]
+}

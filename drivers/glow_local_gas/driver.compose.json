@@ -1,0 +1,39 @@
+{
+  "name": {
+    "en": "Glow gas meter (local)"
+  },
+  "class": "sensor",
+  "capabilities": [
+    "meter_gas",
+    "gas_energy",
+    "tariff",
+    "standing_charge",
+    "display_link",
+    "signal_strength",
+    "link_quality"
+  ],
+  "capabilitiesOptions": {
+    "meter_gas": {
+      "decimals": 3
+    }
+  },
+  "energy": {
+    "cumulative": true
+  },
+  "platforms": [
+    "local"
+  ],
+  "connectivity": [
+    "lan"
+  ],
+  "images": {
+    "small": "{{driverAssetsPath}}/images/small.png",
+    "large": "{{driverAssetsPath}}/images/large.png",
+    "xlarge": "{{driverAssetsPath}}/images/xlarge.png"
+  },
+  "pair": [
+    {
+      "id": "select"
+    }
+  ]
+}

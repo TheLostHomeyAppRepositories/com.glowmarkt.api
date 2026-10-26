@@ -1,0 +1,10 @@
+{
+  "type": "number",
+  "title": { "en": "Gas energy" },
+  "uiComponent": "sensor",
+  "getable": true,
+  "setable": false,
+  "units": { "en": "kWh" },
+  "insights": true,
+  "decimals": 3
+}

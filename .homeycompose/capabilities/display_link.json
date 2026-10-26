@@ -1,0 +1,8 @@
+{
+  "type": "string",
+  "title": { "en": "Display link" },
+  "uiComponent": "sensor",
+  "getable": true,
+  "setable": false,
+  "insights": false
+}

@@ -1,0 +1,11 @@
+{
+  "type": "number",
+  "title": { "en": "Standing charge" },
+  "uiComponent": "sensor",
+  "getable": true,
+  "setable": false,
+  "units": { "en": "p/day" },
+  "insights": true,
+  "decimals": 2,
+  "icon": "/assets/tariff.svg"
+}

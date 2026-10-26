@@ -63,6 +63,19 @@ test('rule 2: the 1970 garbage message with null readings is rejected (issue 90)
   assert.equal(result.ok, false);
 });
 
+test('rule 3: a gas payload with no cumulativevol is not counted; a null one is', () => {
+  const now = Date.parse('2026-10-25T16:10:00Z');
+  const absent = clone(GAS);
+  delete absent.gasmeter.energy.import.cumulativevol;
+  const absentResult = validateReading(parsePayload('gasmeter', JSON.stringify(absent)).reading, emptyState(), { now });
+  assert.deepEqual(absentResult.rejections, []);
+
+  const nulled = clone(GAS);
+  nulled.gasmeter.energy.import.cumulativevol = null;
+  const nullResult = validateReading(parsePayload('gasmeter', JSON.stringify(nulled)).reading, emptyState(), { now });
+  assert.deepEqual(rulesOf(nullResult), ['gasVolumeM3:3']);
+});
+
 test('rule 3: null, missing and non-numeric fields are skipped one by one', () => {
   const result = validate(elec({
     powerKw: '0.951', importKwh: 6613.405, exportKwh: undefined, unitRate: null, standingCharge: 0.2403,

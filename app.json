@@ -61,6 +61,240 @@
   "flow": {
     "triggers": [
       {
+        "id": "glow_local_electricity_tariff_changed",
+        "title": {
+          "en": "Tariff changed"
+        },
+        "hint": {
+          "en": "Fires only if your supplier has programmed time-of-use rates into the meter. Many tariffs, such as Octopus Flux, hold a single rate in the meter."
+        },
+        "tokens": [
+          {
+            "name": "tariff",
+            "type": "number",
+            "title": {
+              "en": "Tariff"
+            },
+            "example": 25.63
+          },
+          {
+            "name": "previous_tariff",
+            "type": "number",
+            "title": {
+              "en": "Previous tariff"
+            },
+            "example": 7.92
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_electricity"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_electricity_link_changed",
+        "title": {
+          "en": "Display link status changed"
+        },
+        "hint": {
+          "en": "The display's connection to the smart meter hub. A new status counts only once it has lasted a minute."
+        },
+        "tokens": [
+          {
+            "name": "status",
+            "type": "string",
+            "title": {
+              "en": "Status"
+            },
+            "example": "joined"
+          },
+          {
+            "name": "previous_status",
+            "type": "string",
+            "title": {
+              "en": "Previous status"
+            },
+            "example": "service discovery"
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_electricity"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_electricity_stopped_reporting",
+        "title": {
+          "en": "Meter stopped reporting"
+        },
+        "hint": {
+          "en": "No data has arrived from the display for longer than the device's stale-after setting."
+        },
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes since last data"
+            },
+            "example": 6
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_electricity"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_electricity_resumed_reporting",
+        "title": {
+          "en": "Meter resumed reporting"
+        },
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes without data"
+            },
+            "example": 12
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_electricity"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_gas_tariff_changed",
+        "title": {
+          "en": "Tariff changed"
+        },
+        "hint": {
+          "en": "Fires only if your supplier has programmed time-of-use rates into the meter. Many tariffs, such as Octopus Flux, hold a single rate in the meter."
+        },
+        "tokens": [
+          {
+            "name": "tariff",
+            "type": "number",
+            "title": {
+              "en": "Tariff"
+            },
+            "example": 25.63
+          },
+          {
+            "name": "previous_tariff",
+            "type": "number",
+            "title": {
+              "en": "Previous tariff"
+            },
+            "example": 7.92
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_gas"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_gas_link_changed",
+        "title": {
+          "en": "Display link status changed"
+        },
+        "hint": {
+          "en": "The display's connection to the smart meter hub. A new status counts only once it has lasted a minute."
+        },
+        "tokens": [
+          {
+            "name": "status",
+            "type": "string",
+            "title": {
+              "en": "Status"
+            },
+            "example": "joined"
+          },
+          {
+            "name": "previous_status",
+            "type": "string",
+            "title": {
+              "en": "Previous status"
+            },
+            "example": "service discovery"
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_gas"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_gas_stopped_reporting",
+        "title": {
+          "en": "Meter stopped reporting"
+        },
+        "hint": {
+          "en": "No data has arrived from the display for longer than the device's stale-after setting."
+        },
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes since last data"
+            },
+            "example": 6
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_gas"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_gas_resumed_reporting",
+        "title": {
+          "en": "Meter resumed reporting"
+        },
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes without data"
+            },
+            "example": 12
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_gas"
+          }
+        ]
+      },
+      {
         "id": "tariff_changed",
         "title": {
           "en": "Tariff changed"
@@ -85,9 +319,292 @@
           }
         ]
       }
+    ],
+    "conditions": [
+      {
+        "id": "glow_local_electricity_is_reporting",
+        "title": {
+          "en": "Meter !{{is|isn't}} reporting"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_electricity"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_electricity_link_connected",
+        "title": {
+          "en": "Display link !{{is|isn't}} connected"
+        },
+        "hint": {
+          "en": "Connected means the display's link to the smart meter hub has been 'joined' for at least a minute."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_electricity"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_gas_is_reporting",
+        "title": {
+          "en": "Meter !{{is|isn't}} reporting"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_gas"
+          }
+        ]
+      },
+      {
+        "id": "glow_local_gas_link_connected",
+        "title": {
+          "en": "Display link !{{is|isn't}} connected"
+        },
+        "hint": {
+          "en": "Connected means the display's link to the smart meter hub has been 'joined' for at least a minute."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=glow_local_gas"
+          }
+        ]
+      }
     ]
   },
   "drivers": [
+    {
+      "name": {
+        "en": "Glow electricity meter (local)"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "measure_power",
+        "meter_power.imported",
+        "meter_power.exported",
+        "tariff",
+        "standing_charge",
+        "display_link",
+        "signal_strength",
+        "link_quality"
+      ],
+      "capabilitiesOptions": {
+        "measure_power": {
+          "decimals": 0
+        },
+        "meter_power.imported": {
+          "title": {
+            "en": "Imported energy"
+          },
+          "decimals": 3
+        },
+        "meter_power.exported": {
+          "title": {
+            "en": "Exported energy"
+          },
+          "decimals": 3
+        }
+      },
+      "energy": {
+        "cumulative": true,
+        "cumulativeImportedCapability": "meter_power.imported",
+        "cumulativeExportedCapability": "meter_power.exported"
+      },
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "images": {
+        "small": "/drivers/glow_local_electricity/assets/images/small.png",
+        "large": "/drivers/glow_local_electricity/assets/images/large.png",
+        "xlarge": "/drivers/glow_local_electricity/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "select"
+        }
+      ],
+      "id": "glow_local_electricity",
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Display"
+          },
+          "children": [
+            {
+              "id": "unit_id",
+              "type": "label",
+              "label": {
+                "en": "Unit ID"
+              },
+              "value": "",
+              "hint": {
+                "en": "The display's MAC address, as it appears in its MQTT topics."
+              }
+            },
+            {
+              "id": "meter_id",
+              "type": "label",
+              "label": {
+                "en": "MPAN"
+              },
+              "value": "",
+              "hint": {
+                "en": "Masked to the last four characters."
+              }
+            },
+            {
+              "id": "hardware",
+              "type": "label",
+              "label": {
+                "en": "Display hardware"
+              },
+              "value": ""
+            },
+            {
+              "id": "software",
+              "type": "label",
+              "label": {
+                "en": "Display software"
+              },
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "stale_after",
+          "type": "number",
+          "label": {
+            "en": "Stale after"
+          },
+          "value": 5,
+          "min": 1,
+          "max": 1440,
+          "units": {
+            "en": "minutes"
+          },
+          "hint": {
+            "en": "If no data arrives from the display for longer than this, the device shows a warning and fires Meter stopped reporting."
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "Glow gas meter (local)"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "meter_gas",
+        "gas_energy",
+        "tariff",
+        "standing_charge",
+        "display_link",
+        "signal_strength",
+        "link_quality"
+      ],
+      "capabilitiesOptions": {
+        "meter_gas": {
+          "decimals": 3
+        }
+      },
+      "energy": {
+        "cumulative": true
+      },
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "images": {
+        "small": "/drivers/glow_local_gas/assets/images/small.png",
+        "large": "/drivers/glow_local_gas/assets/images/large.png",
+        "xlarge": "/drivers/glow_local_gas/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "select"
+        }
+      ],
+      "id": "glow_local_gas",
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Display"
+          },
+          "children": [
+            {
+              "id": "unit_id",
+              "type": "label",
+              "label": {
+                "en": "Unit ID"
+              },
+              "value": "",
+              "hint": {
+                "en": "The display's MAC address, as it appears in its MQTT topics."
+              }
+            },
+            {
+              "id": "meter_id",
+              "type": "label",
+              "label": {
+                "en": "MPRN"
+              },
+              "value": "",
+              "hint": {
+                "en": "Masked to the last four characters."
+              }
+            },
+            {
+              "id": "hardware",
+              "type": "label",
+              "label": {
+                "en": "Display hardware"
+              },
+              "value": ""
+            },
+            {
+              "id": "software",
+              "type": "label",
+              "label": {
+                "en": "Display software"
+              },
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "stale_after",
+          "type": "number",
+          "label": {
+            "en": "Stale after"
+          },
+          "value": 5,
+          "min": 1,
+          "max": 1440,
+          "units": {
+            "en": "minutes"
+          },
+          "hint": {
+            "en": "If no data arrives from the display for longer than this, the device shows a warning and fires Meter stopped reporting."
+          }
+        }
+      ]
+    },
     {
       "name": {
         "en": "Display and CAD (API)"
@@ -193,6 +710,72 @@
     }
   ],
   "capabilities": {
+    "display_link": {
+      "type": "string",
+      "title": {
+        "en": "Display link"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "insights": false
+    },
+    "gas_energy": {
+      "type": "number",
+      "title": {
+        "en": "Gas energy"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "kWh"
+      },
+      "insights": true,
+      "decimals": 3
+    },
+    "link_quality": {
+      "type": "number",
+      "title": {
+        "en": "Link quality"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "decimals": 0,
+      "min": 0,
+      "max": 255
+    },
+    "signal_strength": {
+      "type": "number",
+      "title": {
+        "en": "Signal strength"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "dBm"
+      },
+      "insights": true,
+      "decimals": 0
+    },
+    "standing_charge": {
+      "type": "number",
+      "title": {
+        "en": "Standing charge"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "p/day"
+      },
+      "insights": true,
+      "decimals": 2,
+      "icon": "/assets/tariff.svg"
+    },
     "tariff": {
       "type": "number",
       "title": {

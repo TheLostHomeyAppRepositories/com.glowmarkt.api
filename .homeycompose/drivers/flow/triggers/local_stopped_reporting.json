@@ -1,0 +1,12 @@
+{
+  "title": { "en": "Meter stopped reporting" },
+  "hint": { "en": "No data has arrived from the display for longer than the device's stale-after setting." },
+  "tokens": [
+    {
+      "name": "minutes",
+      "type": "number",
+      "title": { "en": "Minutes since last data" },
+      "example": 6
+    }
+  ]
+}

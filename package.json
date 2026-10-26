@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "test": "node --test --test-timeout=10000 'test/**/*.test.js'"
+    "test": "node --test --test-timeout=10000 --test-force-exit 'test/**/*.test.js'"
   },
   "devDependencies": {
     "@tsconfig/node12": "^1.0.11",

@@ -1,0 +1,177 @@
+<!-- Shared by both local drivers: keep drivers/glow_local_gas/pair/select.html and
+     drivers/glow_local_electricity/pair/select.html identical (a test checks). -->
+<style>
+  .glow-hidden { display: none !important; }
+  .glow-box { border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 8px; padding: 12px; margin: 12px 0; }
+  .glow-box dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; }
+  .glow-box dt { opacity: 0.7; }
+  .glow-box dd { margin: 0; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+  .glow-note { font-size: 0.9em; opacity: 0.8; }
+  .glow-error { color: #d93025; }
+  .glow-unit { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid rgba(128, 128, 128, 0.25); }
+  .glow-unit:first-child { border-top: none; }
+  .glow-unit .name { font-weight: 600; }
+  .glow-unit .detail { font-size: 0.9em; opacity: 0.8; }
+  .glow-unit .warning { font-size: 0.9em; color: #b06000; }
+  .glow-spinner { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 2px solid rgba(128, 128, 128, 0.4); border-top-color: currentColor; border-radius: 50%; animation: glow-spin 1s linear infinite; vertical-align: -1px; }
+  @keyframes glow-spin { to { transform: rotate(360deg); } }
+</style>
+
+<p class="glow-error" id="layer-error"></p>
+
+<div id="waiting">
+  <p><span class="glow-spinner"></span><span id="waiting-text"></span></p>
+  <div class="glow-box">
+    <p class="glow-note" id="steps"></p>
+    <dl id="connection"></dl>
+    <p class="glow-note" id="address-note"></p>
+  </div>
+</div>
+
+<div id="choose" class="glow-hidden">
+  <p id="choose-text"></p>
+  <div id="units"></div>
+  <p class="glow-note glow-hidden" id="energy-note"></p>
+  <button class="homey-button-primary-full" id="add" type="button"></button>
+</div>
+
+<p class="glow-note glow-hidden" id="all-paired"></p>
+
+<script type="text/javascript">
+  (function () {
+    'use strict';
+
+    const POLL_MS = 2000;
+    const $ = (id) => document.getElementById(id);
+    const selected = new Set();
+    let kind = null;
+    let entries = [];
+    let titleSet = false;
+    let adding = false;
+
+    const t = (key, tokens) => Homey.__(key, tokens) || key;
+
+    // Text only: unit details come from the network.
+    function el(tag, text, className) {
+      const node = document.createElement(tag);
+      if (text !== undefined && text !== null) node.textContent = String(text);
+      if (className) node.className = className;
+      return node;
+    }
+
+    function addPair(dl, label, value) {
+      dl.appendChild(el('dt', label));
+      dl.appendChild(el('dd', value));
+    }
+
+    function renderConnection(connection) {
+      const dl = $('connection');
+      dl.replaceChildren();
+      $('steps').textContent = t('pair.steps');
+      if (connection.mode === 'external') {
+        $('address-note').textContent = t('pair.externalNote');
+        addPair(dl, t('settings.externalBroker'), `${connection.host}:${connection.port}`);
+        addPair(dl, t('settings.prefix'), connection.prefix);
+        return;
+      }
+      $('address-note').textContent = t('settings.fixedAddressNote');
+      addPair(dl, t('settings.address'), connection.address || t('settings.addressUnknown'));
+      addPair(dl, t('settings.port'), connection.port);
+      addPair(dl, t('settings.prefix'), connection.prefix);
+      if (connection.auth) {
+        addPair(dl, t('settings.username'), connection.auth.username);
+        addPair(dl, t('settings.password'), connection.auth.password);
+      }
+    }
+
+    function renderUnits() {
+      const container = $('units');
+      container.replaceChildren();
+      for (const entry of entries) {
+        const { unitId } = entry.device.data;
+        const row = el('label', null, 'glow-unit');
+        const box = el('input');
+        box.type = 'checkbox';
+        box.checked = selected.has(unitId);
+        box.addEventListener('change', () => {
+          if (box.checked) selected.add(unitId);
+          else selected.delete(unitId);
+          $('add').disabled = selected.size === 0;
+        });
+        const text = el('div');
+        text.appendChild(el('div', entry.device.name, 'name'));
+        text.appendChild(el('div', entry.description, 'detail'));
+        if (entry.warning) text.appendChild(el('div', entry.warning, 'warning'));
+        row.appendChild(box);
+        row.appendChild(text);
+        container.appendChild(row);
+      }
+      $('add').disabled = selected.size === 0;
+    }
+
+    function render(state) {
+      kind = state.kind;
+      if (!titleSet) {
+        Homey.setTitle(t(`pair.${kind}.title`));
+        $('add').textContent = t('pair.add');
+        $('energy-note').textContent = t('pair.energyNote');
+        $('energy-note').classList.toggle('glow-hidden', kind !== 'electricitymeter');
+        titleSet = true;
+      }
+      $('layer-error').textContent = state.layer.error ? t('pair.layerError', { message: state.layer.error }) : '';
+
+      // Units seen for the first time are selected.
+      const known = new Set(entries.map((entry) => entry.device.data.unitId));
+      for (const entry of state.units) {
+        if (!known.has(entry.device.data.unitId)) selected.add(entry.device.data.unitId);
+      }
+      entries = state.units;
+
+      const waiting = state.seen === 0;
+      const allPaired = !waiting && entries.length === 0;
+      $('waiting').classList.toggle('glow-hidden', !waiting);
+      $('choose').classList.toggle('glow-hidden', waiting || allPaired);
+      $('all-paired').classList.toggle('glow-hidden', !allPaired);
+
+      if (waiting) {
+        $('waiting-text').textContent = t(`pair.${kind}.waiting`);
+        renderConnection(state.connection);
+      } else if (allPaired) {
+        $('all-paired').textContent = t(`pair.${kind}.allPaired`);
+      } else {
+        $('choose-text').textContent = t('pair.choose');
+        renderUnits();
+      }
+    }
+
+    async function poll() {
+      if (adding) return;
+      try {
+        render(await Homey.emit('pairing_state'));
+      } catch (error) {
+        $('layer-error').textContent = error.message || String(error);
+      }
+    }
+
+    async function add() {
+      const chosen = entries.filter((entry) => selected.has(entry.device.data.unitId));
+      if (!chosen.length) return;
+      adding = true;
+      $('add').disabled = true;
+      Homey.showLoadingOverlay();
+      try {
+        for (const entry of chosen) await Homey.createDevice(entry.device);
+        Homey.done();
+      } catch (error) {
+        Homey.hideLoadingOverlay();
+        Homey.alert(t('pair.addFailed', { message: error.message || String(error) }));
+        adding = false;
+        $('add').disabled = false;
+      }
+    }
+
+    $('add').addEventListener('click', add);
+    poll();
+    setInterval(poll, POLL_MS);
+  }());
+</script>

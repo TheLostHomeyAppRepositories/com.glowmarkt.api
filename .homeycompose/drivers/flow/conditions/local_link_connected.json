@@ -1,0 +1,4 @@
+{
+  "title": { "en": "Display link !{{is|isn't}} connected" },
+  "hint": { "en": "Connected means the display's link to the smart meter hub has been 'joined' for at least a minute." }
+}

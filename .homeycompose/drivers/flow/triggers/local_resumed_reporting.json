@@ -1,0 +1,11 @@
+{
+  "title": { "en": "Meter resumed reporting" },
+  "tokens": [
+    {
+      "name": "minutes",
+      "type": "number",
+      "title": { "en": "Minutes without data" },
+      "example": 12
+    }
+  ]
+}

@@ -61,6 +61,8 @@
     "none": "None",
     "never": "Never",
     "pairedDevices": "Paired devices",
+    "deviceReporting": "reporting",
+    "deviceNotReporting": "not reporting",
     "ignoredMessages": "Messages on unrecognised topics: __count__",
     "cloudTitle": "Cloud",
     "cloudNone": "No cloud devices.",
@@ -103,5 +105,34 @@
   },
   "cloud": {
     "accessRefused": "Glowmarkt is refusing access to this meter (HTTP 401), even after logging in again. Trying again every hour."
+  },
+  "pair": {
+    "gasmeter": {
+      "title": "Add a Glow gas meter",
+      "deviceName": "Glow gas meter",
+      "meterId": "MPRN",
+      "waiting": "Waiting for a gas reading from your display. Set up MQTT on the display; this page checks every 2 seconds and moves on as soon as a reading arrives.",
+      "allPaired": "Every display that's sending gas readings already has a Glow gas meter device."
+    },
+    "electricitymeter": {
+      "title": "Add a Glow electricity meter",
+      "deviceName": "Glow electricity meter",
+      "meterId": "MPAN",
+      "waiting": "Waiting for an electricity reading from your display. Set up MQTT on the display; this page checks every 2 seconds and moves on as soon as a reading arrives.",
+      "allPaired": "Every display that's sending electricity readings already has a Glow electricity meter device."
+    },
+    "steps": "On the display, open Settings → Metering → MQTT and enter these details. The display needs firmware 1.8.12 or later. An Ethernet CAD without a screen is set up at managecads.glowmarkt.com instead.",
+    "externalNote": "The app is set to use an external broker, so point the display at that broker, using its IP address rather than a name. You can change this in the app's settings.",
+    "layerError": "The MQTT connection isn't running: __message__ Check the app's settings.",
+    "choose": "Choose the meters to add.",
+    "notReported": "not reported",
+    "noGasVolume": "No gas volume reported, so this device can't feed Homey Energy",
+    "energyNote": "This device registers in Homey Energy as a whole-home electricity meter. If you already have one, such as a P1 meter or an inverter's meter, exclude one of them in Energy so your usage isn't counted twice.",
+    "add": "Add",
+    "addFailed": "Couldn't add the device: __message__"
+  },
+  "device": {
+    "stale": "No data from the display for __minutes__ minutes",
+    "noGasVolume": "Your display isn't reporting gas volume, so this device can't feed Homey Energy."
   }
 }

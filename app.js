@@ -82,6 +82,12 @@ class GlowmarktApp extends Homey.App {
       const MqttLayer = require('./lib/mqtt/MqttLayer');
       const UnitRegistry = require('./lib/glow/UnitRegistry');
       this.registry = new UnitRegistry();
+      // Staleness counts messages for the meter itself, so STATE doesn't count.
+      this.registry.on('arrival', (event) => {
+        if (event.kind !== 'STATE') this.routeToDevices(event.unitId, event.kind, 'onGlowArrival', event);
+      });
+      this.registry.on('reading', (event) => this.routeToDevices(event.unitId, event.kind, 'onGlowReading', event));
+      this.registry.on('state', (event) => this.routeToDevices(event.unitId, 'STATE', 'onGlowState', event));
       this.layer = new MqttLayer({
         onMessage: (topic, payload) => this.registry.handleMessage(topic, payload),
         log: (message) => this.log(`[MQTT] ${message}`),
@@ -92,6 +98,21 @@ class GlowmarktApp extends Homey.App {
     this.registry.setPrefix(settings.prefix);
     await this.layer.start(settings);
     if (!this.checkInterval) this.checkInterval = this.homey.setInterval(() => this.updateLayer().catch(this.error), CHECK_INTERVAL_MS);
+  }
+
+  /**
+   * Hands a message to the local devices for that unit: meter messages to the
+   * device of that kind, STATE to both. Drivers never touch MQTT.
+   */
+  routeToDevices(unitId, kind, method, event) {
+    for (const device of this.localDevices()) {
+      const data = device.getData();
+      if (data.unitId !== unitId || (kind !== 'STATE' && data.kind !== kind)) continue;
+      if (typeof device[method] !== 'function') continue;
+      Promise.resolve()
+        .then(() => device[method](event))
+        .catch((error) => this.error(`${method} failed for ${device.getName()}:`, error));
+    }
   }
 
   async stopLayer() {
@@ -149,6 +170,26 @@ class GlowmarktApp extends Homey.App {
     await this.updateLayer();
   }
 
+  /**
+   * What to enter on the display, for the pairing view: the built-in broker's
+   * address, port, prefix and credentials, or the external broker's address.
+   */
+  getConnectionDetails(address) {
+    const settings = this.getMqttSettings();
+    if (settings.mode === 'external') {
+      return {
+        mode: 'external', host: settings.externalHost, port: settings.externalPort, prefix: settings.prefix,
+      };
+    }
+    return {
+      mode: 'builtin',
+      address,
+      port: settings.port,
+      prefix: settings.prefix,
+      auth: settings.authEnabled ? { username: settings.username, password: settings.password } : null,
+    };
+  }
+
   async getLocalIp() {
     if (this.localIp && Date.now() - this.localIp.at < ADDRESS_CACHE_MS) return this.localIp.value;
     let value = null;
@@ -179,7 +220,9 @@ class GlowmarktApp extends Homey.App {
     for (const unit of units) {
       unit.devices = devices
         .filter((device) => device.getData().unitId === unit.unitId)
-        .map((device) => ({ name: device.getName(), kind: device.getData().kind }));
+        .map((device) => (typeof device.getStatusSummary === 'function'
+          ? device.getStatusSummary()
+          : { name: device.getName(), kind: device.getData().kind }));
     }
 
     return {

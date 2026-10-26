@@ -402,7 +402,7 @@
         addPair(dl, t('settings.displayLink'), unit.han.status || '—');
         addPair(dl, t('settings.signalStrength'), unit.han.rssi !== undefined ? `${unit.han.rssi} dBm` : '—');
         addPair(dl, t('settings.linkQuality'), unit.han.lqi !== undefined ? unit.han.lqi : '—');
-        const devices = unit.devices && unit.devices.length ? unit.devices.map((d) => d.name).join(', ') : t('settings.none');
+        const devices = unit.devices && unit.devices.length ? unit.devices.map(describeDevice).join('; ') : t('settings.none');
         addPair(dl, t('settings.pairedDevices'), devices);
         box.appendChild(dl);
 
@@ -419,6 +419,15 @@
         box.appendChild(table);
         container.appendChild(box);
       }
+    }
+
+    // A paired local device, with whether it's reporting and its own rejection counts.
+    function describeDevice(device) {
+      const parts = [];
+      if (device.reporting !== undefined) parts.push(t(device.reporting ? 'settings.deviceReporting' : 'settings.deviceNotReporting'));
+      const rejections = Object.entries(device.rejections || {}).map(([reason, n]) => `${reason}: ${n}`).join(', ');
+      if (device.rejections) parts.push(`${t('settings.rejections')}: ${rejections || t('settings.none')}`);
+      return parts.length ? `${device.name} (${parts.join(', ')})` : device.name;
     }
 
     function renderLog(entries) {

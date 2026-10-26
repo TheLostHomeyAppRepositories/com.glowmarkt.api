@@ -1,0 +1,44 @@
+[
+  {
+    "type": "group",
+    "label": { "en": "Display" },
+    "children": [
+      {
+        "id": "unit_id",
+        "type": "label",
+        "label": { "en": "Unit ID" },
+        "value": "",
+        "hint": { "en": "The display's MAC address, as it appears in its MQTT topics." }
+      },
+      {
+        "id": "meter_id",
+        "type": "label",
+        "label": { "en": "MPRN" },
+        "value": "",
+        "hint": { "en": "Masked to the last four characters." }
+      },
+      {
+        "id": "hardware",
+        "type": "label",
+        "label": { "en": "Display hardware" },
+        "value": ""
+      },
+      {
+        "id": "software",
+        "type": "label",
+        "label": { "en": "Display software" },
+        "value": ""
+      }
+    ]
+  },
+  {
+    "id": "stale_after",
+    "type": "number",
+    "label": { "en": "Stale after" },
+    "value": 5,
+    "min": 1,
+    "max": 1440,
+    "units": { "en": "minutes" },
+    "hint": { "en": "If no data arrives from the display for longer than this, the device shows a warning and fires Meter stopped reporting." }
+  }
+]

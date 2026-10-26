@@ -86,7 +86,17 @@ test('parsePayload flags gas payloads without cumulativevol', () => {
   delete gas.gasmeter.energy.import.cumulativevol;
   const result = parsePayload('gasmeter', JSON.stringify(gas));
   assert.equal(result.reading.hasVolume, false);
-  assert.equal(result.reading.fields.gasVolumeM3, undefined);
+  // Absent, not undefined: the validator never sees it, so it isn't counted.
+  assert.ok(!('gasVolumeM3' in result.reading.fields));
+});
+
+test('parsePayload keeps a gas volume that is present but null, so it is still checked', () => {
+  const gas = clone(GAS);
+  gas.gasmeter.energy.import.cumulativevol = null;
+  const result = parsePayload('gasmeter', JSON.stringify(gas));
+  assert.equal(result.reading.hasVolume, true);
+  assert.ok('gasVolumeM3' in result.reading.fields);
+  assert.equal(result.reading.fields.gasVolumeM3, null);
 });
 
 test('parsePayload normalises STATE', () => {

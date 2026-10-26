@@ -1,0 +1,12 @@
+{
+  "triggers": [
+    { "$extends": "local_tariff_changed", "$id": "glow_local_gas_tariff_changed" },
+    { "$extends": "local_link_changed", "$id": "glow_local_gas_link_changed" },
+    { "$extends": "local_stopped_reporting", "$id": "glow_local_gas_stopped_reporting" },
+    { "$extends": "local_resumed_reporting", "$id": "glow_local_gas_resumed_reporting" }
+  ],
+  "conditions": [
+    { "$extends": "local_is_reporting", "$id": "glow_local_gas_is_reporting" },
+    { "$extends": "local_link_connected", "$id": "glow_local_gas_link_connected" }
+  ]
+}
