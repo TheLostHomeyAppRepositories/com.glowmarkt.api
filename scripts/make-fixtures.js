@@ -2,27 +2,29 @@
 
 // Turns a raw Glow capture into a fixture file that's safe to commit.
 //
-//   node scripts/make-fixtures.js test/fixtures/raw/glow-capture.log [output.jsonl]
+//   node scripts/make-fixtures.js test/fixtures/raw/glow-capture.log [output.jsonl.gz]
 //
 // The input is `mosquitto_sub -v -F '%I %t %p'` output: an ISO time, the topic
 // and the payload on each line. The output defaults to test/fixtures/<input
-// name>.jsonl, one { received, topic, payload } object per line, with the
-// payload kept as the original string. MPAN, MPRN, EUI, supplier and unit ID
+// name>.jsonl.gz, gzipped, one { received, topic, payload } object per line,
+// with the payload kept as the original string. An output name not ending in
+// .gz is written uncompressed. MPAN, MPRN, EUI, supplier and unit ID
 // (the display MAC) are replaced by stand-ins numbered in order of first
 // appearance, so the same value always gets the same stand-in. Placeholders the
 // display sends instead of a value, such as "not available" or "---", are kept.
 
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const { isPlaceholder } = require('../lib/glow/mask');
 
 const [input, outputArg] = process.argv.slice(2);
 if (!input) {
-  console.error('Usage: node scripts/make-fixtures.js <capture.log> [output.jsonl]');
+  console.error('Usage: node scripts/make-fixtures.js <capture.log> [output.jsonl.gz]');
   process.exit(1);
 }
-const output = outputArg || path.join(__dirname, '..', 'test', 'fixtures', `${path.basename(input, path.extname(input))}.jsonl`);
+const output = outputArg || path.join(__dirname, '..', 'test', 'fixtures', `${path.basename(input, path.extname(input))}.jsonl.gz`);
 
 const standIns = {
   unit: { map: new Map(), make: (n) => n.toString(16).toUpperCase().padStart(12, '0') },
@@ -82,7 +84,8 @@ for (const line of lines) {
 }
 
 fs.mkdirSync(path.dirname(output), { recursive: true });
-fs.writeFileSync(output, `${out.join('\n')}\n`);
+const text = `${out.join('\n')}\n`;
+fs.writeFileSync(output, output.endsWith('.gz') ? zlib.gzipSync(text, { level: 9 }) : text);
 
 const counts = Object.entries(standIns).map(([kind, { map }]) => `${map.size} ${kind}`).join(', ');
 console.log(`Wrote ${out.length} messages to ${path.relative(process.cwd(), output)}; skipped ${skipped} unreadable lines; masked ${counts}.`);

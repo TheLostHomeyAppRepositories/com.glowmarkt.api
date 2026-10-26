@@ -13,6 +13,7 @@ const {
 
 const NOW = Date.parse('2026-10-25T12:00:00Z');
 const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
 const iso = (ms) => new Date(ms).toISOString();
 
 const elec = (fields, ms = NOW) => ({ kind: 'electricitymeter', timestamp: iso(ms), fields });
@@ -141,19 +142,39 @@ test('rule 8: electricity rises beyond 30 kW × hours + 0.1 kWh are skipped', ()
   assert.equal(bad.state.lastGood.importKwh.value, 100);
 });
 
-test('rule 8: a re-send with the same timestamp may only move by the slack', () => {
-  const start = elec({ importKwh: 100 });
-  assert.deepEqual(run([start, elec({ importKwh: 100.1 })]).results[1].rejections, []);
-  assert.deepEqual(rulesOf(run([start, elec({ importKwh: 100.2 })]).results[1]), ['importKwh:8']);
+test('rule 8: electricity allows at least 1 minute, even for a re-send', () => {
+  // 1 minute allows 30 × 1/60 + 0.1 = 0.6 kWh.
+  for (const ms of [NOW, NOW + 10 * 1000]) {
+    const start = elec({ importKwh: 100 });
+    assert.deepEqual(run([start, elec({ importKwh: 100.59 }, ms)]).results[1].rejections, []);
+    assert.deepEqual(rulesOf(run([start, elec({ importKwh: 100.7 }, ms)]).results[1]), ['importKwh:8']);
+  }
 });
 
 test('rule 8: gas rises beyond 10 m³/h × hours + 0.05 m³, and the kWh equivalent, are skipped', () => {
-  // 30 minutes allows 5.05 m³, or 5.05 × 11.2 = 56.56 kWh.
-  const start = gas({ gasVolumeM3: 3177.49, gasEnergyKwh: 35570 }, NOW - 30 * MINUTE);
-  const ok = run([start, gas({ gasVolumeM3: 3182.53, gasEnergyKwh: 35570 + 5.04 * GAS_KWH_PER_M3 })]).results[1];
+  // 1 hour allows 10.05 m³, or 10.05 × 11.2 = 112.56 kWh.
+  const start = gas({ gasVolumeM3: 3177.49, gasEnergyKwh: 35570 }, NOW - HOUR);
+  const ok = run([start, gas({ gasVolumeM3: 3177.49 + 10.04, gasEnergyKwh: 35570 + 10.04 * GAS_KWH_PER_M3 })]).results[1];
   assert.deepEqual(ok.rejections, []);
-  const bad = run([start, gas({ gasVolumeM3: 3182.6, gasEnergyKwh: 35570 + 5.1 * GAS_KWH_PER_M3 })]).results[1];
+  const bad = run([start, gas({ gasVolumeM3: 3177.49 + 10.1, gasEnergyKwh: 35570 + 10.1 * GAS_KWH_PER_M3 })]).results[1];
   assert.deepEqual(rulesOf(bad), ['gasVolumeM3:8', 'gasEnergyKwh:8']);
+});
+
+test('rule 8: gas allows at least 35 minutes, so a half-hourly step after re-stamped readings is accepted', () => {
+  // As in the capture: flat readings re-stamped every ~30 s, then the 0.309 m³
+  // step 33 s after the last of them.
+  const readings = [];
+  for (let s = 0; s <= 30 * 60; s += 30) readings.push(gas({ gasVolumeM3: 3182.181, gasEnergyKwh: 35706.086 }, NOW - HOUR + s * 1000));
+  const lastFlat = NOW - HOUR + 30 * 60 * 1000;
+  readings.push(gas({ gasVolumeM3: 3182.49, gasEnergyKwh: 35709.559 }, lastFlat + 33 * 1000));
+  const { results, state } = run(readings);
+  assert.deepEqual(results.at(-1).rejections, []);
+  assert.equal(state.lastGood.gasVolumeM3.value, 3182.49);
+
+  // 35 minutes allows 10 × 35/60 + 0.05 = 5.883 m³ per step.
+  const start = gas({ gasVolumeM3: 100 });
+  assert.deepEqual(run([start, gas({ gasVolumeM3: 105.88 }, NOW + 1000)]).results[1].rejections, []);
+  assert.deepEqual(rulesOf(run([start, gas({ gasVolumeM3: 105.9 }, NOW + 1000)]).results[1]), ['gasVolumeM3:8']);
 });
 
 test('rules 7–9 do not apply to the first reading', () => {
@@ -161,87 +182,105 @@ test('rules 7–9 do not apply to the first reading', () => {
   assert.deepEqual(result.rejections, []);
 });
 
-test('rule 9: six consistent lower gas readings become a new baseline', () => {
-  const readings = [gas({ gasVolumeM3: 3177.49 }, NOW - 7 * 30 * MINUTE)];
-  for (let i = 1; i <= 6; i++) readings.push(gas({ gasVolumeM3: 1 + i * 0.1 }, NOW - (7 - i) * 30 * MINUTE));
+// Gas readings every 30 s, as the display re-stamps them, from `startMs`.
+function gasRun(startMs, values, field = 'gasVolumeM3') {
+  return values.map((value, i) => gas({ [field]: value }, startMs + i * 30 * 1000));
+}
+
+test('rule 9: lower gas readings become a new baseline after 3 hours of fresh readings', () => {
+  const start = NOW - 4 * HOUR;
+  const steps = 3 * 60 * 2; // 30 s readings over 3 hours
+  const readings = [gas({ gasVolumeM3: 3177.49 }, start - 30 * 1000), ...gasRun(start, Array(steps + 1).fill(1.5))];
   const { results, state } = run(readings);
-  for (let i = 1; i <= 5; i++) assert.deepEqual(rulesOf(results[i]), ['gasVolumeM3:7'], `reading ${i}`);
-  assert.deepEqual(results[6].rejections, []);
-  assert.deepEqual(results[6].baselineResets, ['gasVolumeM3']);
-  assert.equal(state.lastGood.gasVolumeM3.value, 1.6);
+  assert.deepEqual(rulesOf(results[1]), ['gasVolumeM3:7']);
+  assert.deepEqual(rulesOf(results[steps]), ['gasVolumeM3:7'], 'still rejected 30 s before 3 hours');
+  assert.deepEqual(results[steps + 1].rejections, []);
+  assert.deepEqual(results[steps + 1].baselineResets, ['gasVolumeM3']);
+  assert.equal(state.lastGood.gasVolumeM3.value, 1.5);
   assert.equal(state.series.gasVolumeM3, undefined);
 
-  // The new series carries on as normal.
-  const next = validate(gas({ gasVolumeM3: 1.7 }, NOW + 30 * MINUTE), state);
-  assert.deepEqual(next.rejections, []);
+  // The new baseline carries on as normal.
+  assert.deepEqual(validate(gas({ gasVolumeM3: 1.6 }, start + 4 * HOUR), state).rejections, []);
 });
 
-test('rule 9: electricity needs 30 consistent readings', () => {
-  const readings = [elec({ importKwh: 6613 }, NOW - 31 * MINUTE)];
-  for (let i = 1; i <= 30; i++) readings.push(elec({ importKwh: 10 + i * 0.01 }, NOW - (31 - i) * MINUTE));
+test('rule 9: electricity needs 5 minutes of fresh readings', () => {
+  const start = NOW - HOUR;
+  const readings = [elec({ importKwh: 6613 }, start - 10 * 1000)];
+  for (let i = 0; i <= 30; i++) readings.push(elec({ importKwh: 10 + i * 0.01 }, start + i * 10 * 1000));
   const { results } = run(readings);
-  assert.deepEqual(rulesOf(results[29]), ['importKwh:7']);
-  assert.deepEqual(results[30].baselineResets, ['importKwh']);
+  assert.deepEqual(rulesOf(results[30]), ['importKwh:7'], 'still rejected at 4 min 50 s');
+  assert.deepEqual(results[31].baselineResets, ['importKwh']);
 });
 
-test('rule 9: an inconsistent reading restarts the series', () => {
-  const readings = [gas({ gasVolumeM3: 3177.49 }, NOW - 10 * 30 * MINUTE)];
-  const values = [1.1, 1.2, 1.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-  values.forEach((v, i) => readings.push(gas({ gasVolumeM3: v }, NOW - (9 - i) * 30 * MINUTE)));
-  const { results } = run(readings);
-  // 0.5 falls below 1.3, so the series restarts there and completes six later at 1.0.
-  for (let i = 1; i <= 8; i++) assert.deepEqual(results[i].baselineResets, [], `reading ${i}`);
-  assert.deepEqual(results[9].baselineResets, ['gasVolumeM3']);
-});
-
-test('rule 9: an implausible rise within the series restarts it', () => {
-  const readings = [gas({ gasVolumeM3: 3177.49 }, NOW - 7 * 30 * MINUTE)];
-  const values = [1.1, 1.2, 100, 100.1, 100.2, 100.3, 100.4];
-  values.forEach((v, i) => readings.push(gas({ gasVolumeM3: v }, NOW - (6 - i) * 30 * MINUTE)));
-  const { results } = run(readings);
-  assert.deepEqual(results[6].baselineResets, []);
-  assert.deepEqual(results[7].baselineResets, []);
-  assert.equal(results[7].state.series.gasVolumeM3.length, 5);
-});
-
-test('rule 9: re-sends with no newer timestamp do not count towards the series', () => {
-  const readings = [gas({ gasVolumeM3: 3177.49 }, NOW - 60 * MINUTE)];
-  for (let i = 0; i < 10; i++) readings.push(gas({ gasVolumeM3: 1 }, NOW));
+test('rule 9: re-sends do not count towards the run, however many arrive', () => {
+  const start = NOW - 5 * HOUR;
+  const readings = [gas({ gasVolumeM3: 3177.49 }, start)];
+  // 500 messages with the same payload timestamp, then one older.
+  for (let i = 0; i < 500; i++) readings.push(gas({ gasVolumeM3: 1 }, start + MINUTE));
+  readings.push(gas({ gasVolumeM3: 1 }, start + 30 * 1000));
   const { results, state } = run(readings);
   assert.ok(results.slice(1).every((r) => rulesOf(r)[0] === 'gasVolumeM3:7'));
-  assert.equal(state.series.gasVolumeM3.length, 1);
+  assert.equal(state.series.gasVolumeM3.startTs, start + MINUTE);
+  assert.equal(state.series.gasVolumeM3.lastTs, start + MINUTE);
 });
 
-test('rule 9: a consistent run above the rise limit (rule 8) becomes a new baseline once it rises', () => {
-  // A replacement meter reading higher than the old one.
-  const readings = [gas({ gasVolumeM3: 100 }, NOW - 7 * 30 * MINUTE)];
-  for (let i = 1; i <= 6; i++) readings.push(gas({ gasVolumeM3: 5000 + i * 0.1 }, NOW - (7 - i) * 30 * MINUTE));
+test('rule 9: an inconsistent reading restarts the run', () => {
+  const start = NOW - 6 * HOUR;
+  const readings = [
+    gas({ gasVolumeM3: 3177.49 }, start - 30 * 1000),
+    ...gasRun(start, Array(2 * 60 * 2).fill(1.3)), // 2 hours at 1.3
+    ...gasRun(start + 2 * HOUR, Array(3 * 60 * 2 + 1).fill(0.5)), // drops: restarts, then 3 hours at 0.5
+  ];
+  const { results } = run(readings);
+  const resets = results.map((r, i) => (r.baselineResets.length ? i : null)).filter((i) => i !== null);
+  assert.deepEqual(resets, [readings.length - 1]);
+  assert.equal(results.at(-1).state.lastGood.gasVolumeM3.value, 0.5);
+});
+
+test('rule 9: an implausible rise within the run restarts it', () => {
+  const start = NOW - 5 * HOUR;
+  const readings = [
+    gas({ gasVolumeM3: 3177.49 }, start - 30 * 1000),
+    ...gasRun(start, Array(2 * 60 * 2).fill(1.2)),
+    // 1.2 → 100 in 30 s is beyond even the 35-minute allowance of 5.883 m³.
+    ...gasRun(start + 2 * HOUR, Array(2 * 60 * 2).fill(100)),
+  ];
   const { results, state } = run(readings);
-  for (let i = 1; i <= 5; i++) assert.deepEqual(rulesOf(results[i]), ['gasVolumeM3:8'], `reading ${i}`);
-  assert.deepEqual(results[6].baselineResets, ['gasVolumeM3']);
-  assert.equal(state.lastGood.gasVolumeM3.value, 5000.6);
+  assert.ok(results.every((r) => r.baselineResets.length === 0));
+  assert.equal(state.series.gasVolumeM3.startTs, start + 2 * HOUR);
+});
+
+test('rule 9: a consistent run above the rise limit (rule 8) becomes a new baseline once it has risen', () => {
+  // A replacement meter reading higher than the old one, creeping up.
+  const start = NOW - 4 * HOUR;
+  const values = Array.from({ length: 3 * 60 * 2 + 1 }, (_, i) => 5000 + Math.floor(i / 60) * 0.1);
+  const readings = [gas({ gasVolumeM3: 100 }, start - 30 * 1000), ...gasRun(start, values)];
+  const { results, state } = run(readings);
+  assert.deepEqual(rulesOf(results[1]), ['gasVolumeM3:8']);
+  assert.deepEqual(results.at(-1).baselineResets, ['gasVolumeM3']);
+  assert.equal(state.lastGood.gasVolumeM3.value, values.at(-1));
 });
 
 test('rule 9: a stuck high value (rule 8) never becomes a baseline', () => {
-  const readings = [gas({ gasVolumeM3: 100 }, NOW - 20 * 30 * MINUTE)];
-  for (let i = 1; i <= 20; i++) readings.push(gas({ gasVolumeM3: 5000 }, NOW - (20 - i) * 30 * MINUTE));
+  const start = NOW - 7 * HOUR;
+  const readings = [gas({ gasVolumeM3: 100 }, start - 30 * 1000), ...gasRun(start, Array(6 * 60 * 2).fill(5000))];
   const { results, state } = run(readings);
   assert.ok(results.slice(1).every((r) => rulesOf(r)[0] === 'gasVolumeM3:8'));
   assert.equal(state.lastGood.gasVolumeM3.value, 100);
-  assert.equal(state.series.gasVolumeM3.length, 6);
+  assert.deepEqual({ rule8: state.series.gasVolumeM3.rule8, rose: state.series.gasVolumeM3.rose }, { rule8: true, rose: false });
 
-  // One rise at the end of the window is enough.
-  const next = validate(gas({ gasVolumeM3: 5000.1 }, NOW + 30 * MINUTE), state);
+  // One rise is enough once the run has lasted 3 hours.
+  const next = validate(gas({ gasVolumeM3: 5000.1 }, start + 6 * HOUR), state);
   assert.deepEqual(next.baselineResets, ['gasVolumeM3']);
 });
 
 test('rule 9: a rule 7 run needs no rise', () => {
-  const readings = [gas({ gasVolumeM3: 3177.49 }, NOW - 7 * 30 * MINUTE)];
-  for (let i = 1; i <= 6; i++) readings.push(gas({ gasVolumeM3: 1 }, NOW - (7 - i) * 30 * MINUTE));
-  assert.deepEqual(run(readings).results[6].baselineResets, ['gasVolumeM3']);
+  const start = NOW - 4 * HOUR;
+  const readings = [gas({ gasVolumeM3: 3177.49 }, start - 30 * 1000), ...gasRun(start, Array(3 * 60 * 2 + 1).fill(1))];
+  assert.deepEqual(run(readings).results.at(-1).baselineResets, ['gasVolumeM3']);
 });
 
-test('rule 9: an accepted reading clears a partial series', () => {
+test('rule 9: an accepted reading clears a partial run', () => {
   const { state } = run([
     elec({ importKwh: 100 }, NOW - 3 * MINUTE),
     elec({ importKwh: 1 }, NOW - 2 * MINUTE),
@@ -275,4 +314,14 @@ test('validateState accepts the example and skips bad link fields', () => {
   const result = validateState(parsePayload('STATE', JSON.stringify(bad)).reading);
   assert.deepEqual(result.accepted, {});
   assert.deepEqual(result.rejections.map((r) => r.field), ['hanStatus', 'rssi', 'lqi']);
+});
+
+test('validateState skips RSSI outside −120 to 0 dBm and LQI outside 0–255 (rule 6)', () => {
+  const state = (han) => validateState({ han: { status: 'joined', ...han } });
+  // The capture's one impossible reading.
+  assert.deepEqual(state({ rssi: 73, lqi: 255 }).rejections, [{ field: 'rssi', rule: 6, reason: 'out_of_range', value: 73 }]);
+  assert.deepEqual(state({ rssi: -121, lqi: 256 }).rejections.map((r) => `${r.field}:${r.rule}`), ['rssi:6', 'lqi:6']);
+  assert.deepEqual(state({ rssi: -1, lqi: -1 }).rejections.map((r) => `${r.field}:${r.rule}`), ['lqi:6']);
+  assert.deepEqual(state({ rssi: -120, lqi: 0 }).accepted, { hanStatus: 'joined', rssi: -120, lqi: 0 });
+  assert.deepEqual(state({ rssi: 0, lqi: 255 }).accepted, { hanStatus: 'joined', rssi: 0, lqi: 255 });
 });
