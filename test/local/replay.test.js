@@ -115,7 +115,7 @@ test('han-blip: a 10 s blip fires nothing and the link stays joined', async () =
   await play(syntheticMessages('han-blip', { unitId: UNIT, start: START }));
   for (const { device, record } of [gas, electricity]) {
     assert.deepEqual(record.triggers, []);
-    assert.equal(record.caps.get('display_link'), 'joined');
+    assert.equal(record.caps.get('display_link'), 'Joined');
     assert.equal(device.isLinkConnected(), true);
   }
 });
@@ -125,8 +125,8 @@ test('han-outage: a 110 s outage fires Display link status changed out and back'
   await play(syntheticMessages('han-outage', { unitId: UNIT, start: START }));
   for (const { record } of [gas, electricity]) {
     assert.deepEqual(record.triggers, [
-      { id: 'link_changed', tokens: { status: 'service discovery', previous_status: 'joined' } },
-      { id: 'link_changed', tokens: { status: 'joined', previous_status: 'service discovery' } },
+      { id: 'link_changed', tokens: { status: 'Service discovery', previous_status: 'Joined' } },
+      { id: 'link_changed', tokens: { status: 'Joined', previous_status: 'Service discovery' } },
     ]);
   }
 });

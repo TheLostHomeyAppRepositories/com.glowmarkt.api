@@ -28,5 +28,8 @@
   },
   "1.1.7": {
     "en": "Another fix for constant device disconnections"
+  },
+  "1.2.0": {
+    "en": "New Glow gas meter (local) and Glow electricity meter (local) devices read your Glow display's MQTT feed directly, without the internet, and bring gas into Homey Energy. Fixes for the cloud Display and CAD device: account entries that return errors are skipped, the login renews itself, and Tariff changed now fires. This version needs Homey 12.9.0 or later. Homeys on older firmware stay on version 1.1.7 and don't get the cloud fixes, so update Homey first."
   }
 }

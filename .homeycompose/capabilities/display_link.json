@@ -1,8 +1,11 @@
 {
   "type": "string",
-  "title": { "en": "Display link" },
+  "title": {
+    "en": "Display link"
+  },
   "uiComponent": "sensor",
   "getable": true,
   "setable": false,
-  "insights": false
+  "insights": false,
+  "icon": "/assets/display_link.svg"
 }

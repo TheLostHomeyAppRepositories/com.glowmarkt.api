@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.glowmarkt.api",
-  "version": "1.1.7",
+  "version": "1.2.0",
   "compatibility": ">=12.9.0",
   "sdk": 3,
   "platforms": [
@@ -109,7 +109,7 @@
             "title": {
               "en": "Status"
             },
-            "example": "joined"
+            "example": "Joined"
           },
           {
             "name": "previous_status",
@@ -117,7 +117,7 @@
             "title": {
               "en": "Previous status"
             },
-            "example": "service discovery"
+            "example": "Service discovery"
           }
         ],
         "args": [
@@ -226,7 +226,7 @@
             "title": {
               "en": "Status"
             },
-            "example": "joined"
+            "example": "Joined"
           },
           {
             "name": "previous_status",
@@ -234,7 +234,7 @@
             "title": {
               "en": "Previous status"
             },
-            "example": "service discovery"
+            "example": "Service discovery"
           }
         ],
         "args": [
@@ -340,7 +340,7 @@
           "en": "Display link !{{is|isn't}} connected"
         },
         "hint": {
-          "en": "Connected means the display's link to the smart meter hub has been 'joined' for at least a minute."
+          "en": "Connected means the display's link to the smart meter hub has been Joined for at least a minute."
         },
         "args": [
           {
@@ -369,7 +369,7 @@
           "en": "Display link !{{is|isn't}} connected"
         },
         "hint": {
-          "en": "Connected means the display's link to the smart meter hub has been 'joined' for at least a minute."
+          "en": "Connected means the display's link to the smart meter hub has been Joined for at least a minute."
         },
         "args": [
           {
@@ -718,7 +718,8 @@
       "uiComponent": "sensor",
       "getable": true,
       "setable": false,
-      "insights": false
+      "insights": false,
+      "icon": "/assets/display_link.svg"
     },
     "gas_energy": {
       "type": "number",
@@ -732,7 +733,8 @@
         "en": "kWh"
       },
       "insights": true,
-      "decimals": 3
+      "decimals": 3,
+      "icon": "/assets/gas_energy.svg"
     },
     "link_quality": {
       "type": "number",
@@ -745,7 +747,8 @@
       "insights": true,
       "decimals": 0,
       "min": 0,
-      "max": 255
+      "max": 255,
+      "icon": "/assets/link_quality.svg"
     },
     "signal_strength": {
       "type": "number",
@@ -759,7 +762,8 @@
         "en": "dBm"
       },
       "insights": true,
-      "decimals": 0
+      "decimals": 0,
+      "icon": "/assets/signal_strength.svg"
     },
     "standing_charge": {
       "type": "number",

@@ -1,10 +1,15 @@
 {
   "type": "number",
-  "title": { "en": "Gas energy" },
+  "title": {
+    "en": "Gas energy"
+  },
   "uiComponent": "sensor",
   "getable": true,
   "setable": false,
-  "units": { "en": "kWh" },
+  "units": {
+    "en": "kWh"
+  },
   "insights": true,
-  "decimals": 3
+  "decimals": 3,
+  "icon": "/assets/gas_energy.svg"
 }

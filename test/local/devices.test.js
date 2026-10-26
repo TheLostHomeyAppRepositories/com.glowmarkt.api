@@ -209,7 +209,7 @@ test('staleness: an app restart does not count as silence, unless the meter was 
 test('link status: the first status shows at once; a 10 s blip changes nothing', async () => {
   const { device, record } = await electricityDevice();
   await device.onGlowState(stateEvent());
-  assert.equal(record.caps.get('display_link'), 'joined');
+  assert.equal(record.caps.get('display_link'), 'Joined');
   clock += 10 * SECOND;
   await device.onGlowState(stateEvent({ status: 'service discovery' }));
   clock += 10 * SECOND;
@@ -217,7 +217,7 @@ test('link status: the first status shows at once; a 10 s blip changes nothing',
   clock += 2 * MINUTE;
   await device.everyMinute();
   assert.deepEqual(record.triggers, []);
-  assert.equal(record.caps.get('display_link'), 'joined');
+  assert.equal(record.caps.get('display_link'), 'Joined');
   assert.equal(device.isLinkConnected(), true);
 });
 
@@ -228,8 +228,8 @@ test('link status: a status lasting 60 s fires Display link status changed', asy
     clock = START + s * SECOND;
     await device.onGlowState(stateEvent({ status: 'service discovery' }));
   }
-  assert.deepEqual(record.triggers, [{ id: 'link_changed', tokens: { status: 'service discovery', previous_status: 'joined' } }]);
-  assert.equal(record.caps.get('display_link'), 'service discovery');
+  assert.deepEqual(record.triggers, [{ id: 'link_changed', tokens: { status: 'Service discovery', previous_status: 'Joined' } }]);
+  assert.equal(record.caps.get('display_link'), 'Service discovery');
   assert.equal(device.isLinkConnected(), false);
 });
 
